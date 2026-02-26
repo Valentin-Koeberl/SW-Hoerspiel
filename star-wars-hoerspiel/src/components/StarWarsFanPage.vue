@@ -7,6 +7,7 @@
       <div class="stars stars--3"></div>
 
       <div class="galaxyAccent"></div>
+      <div class="cursorPulse" aria-hidden="true"></div>
     </div>
 
     <main class="container main" role="main">
@@ -19,7 +20,7 @@
 
         <button type="button" class="playBtnWhite" @click="start" aria-label="Hörspiel starten">
           <span class="playBtnWhite__icon" aria-hidden="true">▶</span>
-          <span class="playBtnWhite__text">{{ started ? "Weiter" : "Play" }}</span>
+          <span class="playBtnWhite__text">Play</span>
         </button>
 
         <!-- Bigger, perfectly centered scroll hint -->
@@ -30,14 +31,6 @@
 
       <!-- CONTENT BELOW HERO -->
       <section id="content" class="stack" aria-label="Landing Inhalt">
-        <!-- Optional: placeholder for player switch (no player component implemented) -->
-        <section v-if="started" class="card placeholder" aria-label="Player Platzhalter">
-          <h2 class="sectionTitle">Player</h2>
-          <p class="muted">
-            Hier würde jetzt die Player-Komponente gerendert werden (absichtlich nicht implementiert).
-          </p>
-        </section>
-
         <!-- Vorgeschichte (same background as footer) -->
         <section class="card glassCard" aria-label="Vorgeschichte">
           <h2 class="sectionTitle">Vorgeschichte</h2>
@@ -129,11 +122,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { getCurrentInstance, onMounted, onBeforeUnmount } from "vue";
 
-const started = ref(false);
+const { proxy } = getCurrentInstance();
+
 function start() {
-  started.value = true;
+  proxy.$router.push("/player");
 }
 
 /**
@@ -153,11 +147,11 @@ function onMouseMove(e) {
   const x = e.clientX / window.innerWidth;
   const y = e.clientY / window.innerHeight;
 
-  document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx", `${(x * 100 - 4.5).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
 
-  document.documentElement.style.setProperty("--mx2", `${(x * 100 + 6).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100 - 6).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100 + 4.5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
 }
 
 onMounted(() => window.addEventListener("mousemove", onMouseMove, { passive: true }));
@@ -339,11 +333,6 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.10);
   padding: 1.25rem 1.35rem;
-}
-
-/* Default card background (kept for placeholder) */
-.placeholder {
-  background: rgba(0, 0, 0, 0.45);
 }
 
 /* Same background as footer */
@@ -528,10 +517,40 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   inset: 0;
   pointer-events: none;
   opacity: 1;
-  background: radial-gradient(420px 320px at var(--mx) var(--my), rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0.06) 35%, rgba(0, 0, 0, 0) 70%),
-  radial-gradient(420px 320px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 35%, rgba(0, 0, 0, 0) 70%);
+  background: radial-gradient(420px 320px at var(--mx) var(--my), rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 36%, rgba(0, 0, 0, 0) 72%),
+  radial-gradient(420px 320px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.08) 36%, rgba(0, 0, 0, 0) 72%);
   filter: blur(10px);
   mix-blend-mode: screen;
   transition: background-position 120ms ease;
+}
+
+.cursorPulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cursorPulse::before,
+.cursorPulse::after {
+  content: "";
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  filter: blur(24px);
+  opacity: 0.55;
+}
+
+.cursorPulse::before {
+  left: var(--mx);
+  top: var(--my);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.66) 0%, rgba(37, 99, 235, 0) 70%);
+}
+
+.cursorPulse::after {
+  left: var(--mx2);
+  top: var(--my2);
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.66) 0%, rgba(239, 68, 68, 0) 70%);
 }
 </style>

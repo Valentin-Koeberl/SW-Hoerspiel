@@ -1,6 +1,8 @@
-// main.js (example): import the global css once
 import { createApp } from "vue";
 import "./assets/main.css";
-import StarWarsLanding from "./components/StarWarsFanPage.vue";
+import App from "./App.vue";
+import { installSimpleRouter } from "./router";
 
-createApp(StarWarsLanding).mount("#app");
+const app = createApp(App);
+installSimpleRouter(app);
+app.mount("#app");
