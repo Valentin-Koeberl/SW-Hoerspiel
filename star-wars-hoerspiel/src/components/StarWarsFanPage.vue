@@ -7,6 +7,7 @@
       <div class="stars stars--3"></div>
 
       <div class="galaxyAccent"></div>
+      <div class="cursorPulse" aria-hidden="true"></div>
     </div>
 
     <main class="container main" role="main">
@@ -524,5 +525,35 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   filter: blur(10px);
   mix-blend-mode: screen;
   transition: background-position 120ms ease;
+}
+
+.cursorPulse {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cursorPulse::before,
+.cursorPulse::after {
+  content: "";
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  filter: blur(24px);
+  opacity: 0.55;
+}
+
+.cursorPulse::before {
+  left: var(--mx);
+  top: var(--my);
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0) 70%);
+}
+
+.cursorPulse::after {
+  left: var(--mx2);
+  top: var(--my2);
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0) 70%);
 }
 </style>
