@@ -33,7 +33,7 @@
         @ended="handleSegmentEnd"
       ></audio>
 
-      <section v-if="showBranches" class="branch-section" aria-label="Entscheidung">
+      <section v-if="limitedBranches.length" class="branch-section" aria-label="Entscheidung">
         <h2 class="branch-title">Was soll Trupp 705 als Nächstes tun?</h2>
         <div class="branch-grid">
           <button
@@ -49,17 +49,13 @@
       </section>
 
       <p v-else-if="currentSegment.autoplayNext" class="autoplay-info">
-        Nächstes Segment startet automatisch nach Ende der Audiodatei ...
-      </p>
-
-      <p v-else-if="limitedBranches.length" class="autoplay-info">
-        Entscheidungen erscheinen, sobald das Audio vollständig abgespielt wurde.
+        Nächstes Segment startet automatisch ...
       </p>
 
       <section class="meta-row">
         <div>Fortschritt: {{ progress }}%</div>
         <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
-        <button class="reset-btn" type="button" @click="resetWholeStory">Komplettes Hörspiel auf 0</button>
+        <button class="reset-btn" type="button" @click="resetSession">Fortschritt zurücksetzen</button>
       </section>
     </main>
   </div>
@@ -147,6 +143,7 @@ function handleSegmentEnd() {
 }
 
 function resetWholeStory() {
+function resetSession() {
   const audio = audioRef.value;
   if (audio) {
     audio.pause();
@@ -155,6 +152,7 @@ function resetWholeStory() {
 
   isPlaying.value = false;
   segmentFinished.value = false;
+  isPlaying.value = false;
   resetProgress();
 }
 
@@ -183,6 +181,15 @@ function goHome() {
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
   text-align: center;
   padding: clamp(1.1rem, 1.8vw, 1.8rem);
+  width: min(900px, 100%);
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 1.2rem;
+  background: rgba(8, 10, 20, 0.66);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52);
+  text-align: center;
+  padding: clamp(1.2rem, 2vw, 2rem);
   transition: opacity 320ms ease, transform 320ms ease;
 }
 
@@ -203,6 +210,13 @@ function goHome() {
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-size: 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 0.85rem 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   font-weight: 700;
   transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
@@ -219,6 +233,8 @@ function goHome() {
 .player-title {
   margin: 0.9rem 0 0;
   font-size: clamp(2rem, 4.5vw, 3.4rem);
+  margin: 1rem 0 0;
+  font-size: clamp(2rem, 4.5vw, 3.6rem);
   text-transform: uppercase;
 }
 
@@ -234,6 +250,17 @@ function goHome() {
   aspect-ratio: 16 / 8.2;
   margin: 0 auto 1.1rem;
   border: 1px dashed rgba(255, 255, 255, 0.45);
+  margin: 0.6rem 0 1.2rem;
+  color: rgba(255, 255, 255, 0.84);
+  text-transform: uppercase;
+  font-size: clamp(1rem, 2.4vw, 1.5rem);
+}
+
+.image-placeholder {
+  width: min(760px, 100%);
+  aspect-ratio: 16 / 9;
+  margin: 0 auto 1.3rem;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
   border-radius: 1rem;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
@@ -254,23 +281,35 @@ function goHome() {
 
 .branch-section {
   margin-top: 0.5rem;
+  font-size: 1.2rem;
+  min-width: 180px;
+  margin-bottom: 1.2rem;
+}
+
+.branch-section {
+  margin-top: 0.7rem;
 }
 
 .branch-grid {
   display: grid;
   gap: 0.7rem;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .branch-title,
 .autoplay-info {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
+  margin: 0 0 0.8rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.88);
 }
 
 .meta-row {
   margin-top: 1rem;
+  margin-top: 1.2rem;
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
