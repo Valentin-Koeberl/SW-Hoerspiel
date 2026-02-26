@@ -67,16 +67,20 @@ import { usePlayerStore } from "../composables/usePlayerStore";
 
 const audioRef = ref(null);
 const isPlaying = ref(false);
+const segmentFinished = ref(false);
 const { proxy } = getCurrentInstance();
 const { state, currentSegment, progress, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } =
   usePlayerStore();
 
 const limitedBranches = computed(() => (currentSegment.value.branches ?? []).slice(0, 3));
+const showBranches = computed(() => segmentFinished.value && limitedBranches.value.length > 0);
 
 watch(
   () => currentSegment.value.id,
   async () => {
+    segmentFinished.value = false;
     await nextTick();
+
     const audio = audioRef.value;
     if (!audio) {
       return;
@@ -104,11 +108,14 @@ function togglePlayback() {
     return;
   }
 
-  audio.play().then(() => {
-    isPlaying.value = true;
-  }).catch(() => {
-    isPlaying.value = false;
-  });
+  audio
+    .play()
+    .then(() => {
+      isPlaying.value = true;
+    })
+    .catch(() => {
+      isPlaying.value = false;
+    });
 }
 
 function handleTimeUpdate(event) {
@@ -121,6 +128,7 @@ function selectBranch(branch) {
 
 function handleSegmentEnd() {
   isPlaying.value = false;
+  segmentFinished.value = true;
 
   if (!currentSegment.value.autoplayNext || !currentSegment.value.nextSegmentId) {
     return;
@@ -134,12 +142,16 @@ function handleSegmentEnd() {
   }, 600);
 }
 
+function resetWholeStory() {
 function resetSession() {
   const audio = audioRef.value;
   if (audio) {
     audio.pause();
     audio.currentTime = 0;
   }
+
+  isPlaying.value = false;
+  segmentFinished.value = false;
   isPlaying.value = false;
   resetProgress();
 }
@@ -159,6 +171,16 @@ function goHome() {
 }
 
 .player-shell {
+  width: min(980px, 100%);
+  z-index: 1;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+  text-align: center;
+  padding: clamp(1.1rem, 1.8vw, 1.8rem);
   width: min(900px, 100%);
   z-index: 1;
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -180,6 +202,14 @@ function goHome() {
 .play-btn,
 .branch-btn,
 .reset-btn {
+  border-radius: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  padding: 0.62rem 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 0.9rem;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.08);
@@ -201,12 +231,25 @@ function goHome() {
 }
 
 .player-title {
+  margin: 0.9rem 0 0;
+  font-size: clamp(2rem, 4.5vw, 3.4rem);
   margin: 1rem 0 0;
   font-size: clamp(2rem, 4.5vw, 3.6rem);
   text-transform: uppercase;
 }
 
 .player-subtitle {
+  margin: 0.55rem 0 1.1rem;
+  color: rgba(255, 255, 255, 0.84);
+  text-transform: uppercase;
+  font-size: clamp(0.95rem, 2.3vw, 1.4rem);
+}
+
+.image-placeholder {
+  width: min(900px, 100%);
+  aspect-ratio: 16 / 8.2;
+  margin: 0 auto 1.1rem;
+  border: 1px dashed rgba(255, 255, 255, 0.45);
   margin: 0.6rem 0 1.2rem;
   color: rgba(255, 255, 255, 0.84);
   text-transform: uppercase;
@@ -232,6 +275,12 @@ function goHome() {
 }
 
 .play-btn {
+  min-width: 140px;
+  margin-bottom: 1rem;
+}
+
+.branch-section {
+  margin-top: 0.5rem;
   font-size: 1.2rem;
   min-width: 180px;
   margin-bottom: 1.2rem;
@@ -243,18 +292,23 @@ function goHome() {
 
 .branch-grid {
   display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 0.8rem;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .branch-title,
 .autoplay-info {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
   margin: 0 0 0.8rem;
   font-size: 1rem;
   color: rgba(255, 255, 255, 0.88);
 }
 
 .meta-row {
+  margin-top: 1rem;
   margin-top: 1.2rem;
   display: flex;
   gap: 0.6rem;
@@ -262,6 +316,7 @@ function goHome() {
   justify-content: center;
   align-items: center;
   color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 640px) {
