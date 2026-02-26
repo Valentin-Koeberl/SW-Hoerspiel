@@ -153,8 +153,8 @@ function onMouseMove(e) {
   document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
 
-  document.documentElement.style.setProperty("--mx2", `${(x * 100).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100 - 5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100 + 5).toFixed(2)}%`);
 }
 
 onMounted(() => window.addEventListener("mousemove", onMouseMove, { passive: true }));
@@ -520,8 +520,8 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   inset: 0;
   pointer-events: none;
   opacity: 1;
-  background: radial-gradient(420px 320px at var(--mx) var(--my), rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0.06) 35%, rgba(0, 0, 0, 0) 70%),
-  radial-gradient(420px 320px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 35%, rgba(0, 0, 0, 0) 70%);
+  background: radial-gradient(420px 320px at var(--mx) var(--my), rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 36%, rgba(0, 0, 0, 0) 72%),
+  radial-gradient(420px 320px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.08) 36%, rgba(0, 0, 0, 0) 72%);
   filter: blur(10px);
   mix-blend-mode: screen;
   transition: background-position 120ms ease;
@@ -548,12 +548,12 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
 .cursorPulse::before {
   left: var(--mx);
   top: var(--my);
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0) 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.66) 0%, rgba(37, 99, 235, 0) 70%);
 }
 
 .cursorPulse::after {
   left: var(--mx2);
   top: var(--my2);
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, rgba(239, 68, 68, 0) 70%);
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.66) 0%, rgba(239, 68, 68, 0) 70%);
 }
 </style>

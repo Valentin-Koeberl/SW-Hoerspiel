@@ -37,6 +37,10 @@
             {{ isPlaying ? "Pause" : "Play" }}
           </button>
 
+          <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+
           <audio
             ref="audioRef"
             :src="currentSegment.audioUrl"
@@ -68,13 +72,13 @@
           <p v-else-if="limitedBranches.length" class="autoplay-info">
             Entscheidungen erscheinen, sobald das Audio vollständig abgespielt wurde.
           </p>
-
-          <section class="meta-row">
-            <div>Fortschritt: {{ progress }}%</div>
-            <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
-            <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
-          </section>
         </aside>
+
+        <section class="meta-row">
+          <div>Fortschritt: {{ progress }}%</div>
+          <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
+          <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
+        </section>
       </section>
     </main>
   </div>
@@ -105,8 +109,8 @@ function onMouseMove(event) {
 
   document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--mx2", `${(x * 100).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100 - 5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100 + 5).toFixed(2)}%`);
 }
 
 onMounted(() => {
@@ -230,13 +234,14 @@ function goHome() {
 }
 
 .player-shell {
-  width: min(1440px, calc(100% - 1.2rem));
+  width: min(1460px, calc(100% - 1.2rem));
   z-index: 1;
   border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.75);
+  background: rgba(10, 10, 14, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   padding: clamp(1rem, 1.3vw, 1.5rem);
   transition: opacity 320ms ease, transform 320ms ease;
 }
@@ -249,16 +254,20 @@ function goHome() {
 .player-layout {
   display: grid;
   grid-template-columns: minmax(760px, 2.35fr) minmax(300px, 1fr);
-  gap: 1.3rem;
+  grid-template-areas:
+    "media decision"
+    "media meta";
+  gap: 1.2rem;
   align-items: start;
 }
 
-.media-column,
-.decision-column {
-  border-radius: 1rem;
+.media-column {
+  grid-area: media;
 }
 
 .decision-column {
+  grid-area: decision;
+  border-radius: 1rem;
   padding: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
@@ -267,9 +276,17 @@ function goHome() {
 .decision-column--active {
   border: 1px solid transparent;
   background:
-    linear-gradient(rgba(8, 10, 20, 0.8), rgba(8, 10, 20, 0.8)) padding-box,
-    linear-gradient(130deg, #3b82f6, #f97316, #ef4444, #3b82f6) border-box;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 0 38px rgba(59, 130, 246, 0.23);
+    linear-gradient(rgba(8, 10, 20, 0.86), rgba(8, 10, 20, 0.86)) padding-box,
+    linear-gradient(120deg, #2563eb, #ef4444, #2563eb) border-box;
+  background-size: 220% 220%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 36px rgba(37, 99, 235, 0.28), 0 0 30px rgba(239, 68, 68, 0.22);
+  animation: decisionGlow 2.6s ease infinite;
+}
+
+@keyframes decisionGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .back-btn,
@@ -305,15 +322,14 @@ function goHome() {
   margin: 0;
   font-size: clamp(2.1rem, 3vw, 3.4rem);
   text-transform: uppercase;
-  text-align: center;
+  text-align: left;
 }
 
 .player-subtitle {
   margin: 0.45rem 0 1rem;
   color: rgba(255, 255, 255, 0.84);
-  text-transform: uppercase;
   font-size: clamp(0.92rem, 1.25vw, 1.22rem);
-  text-align: center;
+  text-align: left;
 }
 
 .image-placeholder {
@@ -321,7 +337,6 @@ function goHome() {
   min-height: 510px;
   aspect-ratio: 16 / 8;
   margin: 0 auto 1rem;
-  border: 1px dashed rgba(255, 255, 255, 0.45);
   border-radius: 1rem;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
@@ -338,7 +353,32 @@ function goHome() {
 .play-btn {
   min-width: 130px;
   display: block;
-  margin: 0 auto;
+}
+
+.audio-waves {
+  height: 24px;
+  margin: 0.6rem 0 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.audio-waves span {
+  width: 5px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #60a5fa, #ef4444);
+  animation: wave 1s ease-in-out infinite;
+}
+
+.audio-waves span:nth-child(2) { animation-delay: 0.12s; }
+.audio-waves span:nth-child(3) { animation-delay: 0.24s; }
+.audio-waves span:nth-child(4) { animation-delay: 0.36s; }
+.audio-waves span:nth-child(5) { animation-delay: 0.48s; }
+
+@keyframes wave {
+  0%, 100% { height: 8px; opacity: 0.6; }
+  50% { height: 22px; opacity: 1; }
 }
 
 .branch-title,
@@ -358,14 +398,28 @@ function goHome() {
   text-align: left;
 }
 
+.branch-btn:hover {
+  background: linear-gradient(115deg, rgba(37, 99, 235, 0.28), rgba(239, 68, 68, 0.28));
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
 .meta-row {
-  margin-top: 1rem;
-  padding-top: 0.8rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  grid-area: meta;
+  justify-self: end;
+  width: min(360px, 100%);
   display: grid;
-  gap: 0.55rem;
+  gap: 0.45rem;
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.88rem;
+}
+
+.reset-btn {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.45), rgba(127, 29, 29, 0.6));
+}
+
+.reset-btn:hover {
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.65), rgba(153, 27, 27, 0.75));
 }
 
 .mobile-blocker {
@@ -386,8 +440,8 @@ function goHome() {
   pointer-events: none;
   opacity: 1;
   background:
-    radial-gradient(420px 320px at var(--mx) var(--my), rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0.06) 35%, rgba(0, 0, 0, 0) 70%),
-    radial-gradient(420px 320px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.12) 0%, rgba(239, 68, 68, 0.05) 35%, rgba(0, 0, 0, 0) 70%);
+    radial-gradient(420px 300px at var(--mx) var(--my), rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 38%, rgba(0, 0, 0, 0) 72%),
+    radial-gradient(420px 300px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.08) 38%, rgba(0, 0, 0, 0) 72%);
   filter: blur(10px);
   mix-blend-mode: screen;
 }
@@ -402,8 +456,8 @@ function goHome() {
 .cursorPulse::after {
   content: "";
   position: absolute;
-  width: 128px;
-  height: 128px;
+  width: 132px;
+  height: 132px;
   border-radius: 999px;
   transform: translate(-50%, -50%);
   filter: blur(22px);
@@ -425,6 +479,15 @@ function goHome() {
 @media (max-width: 1200px) {
   .player-layout {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "media"
+      "decision"
+      "meta";
+  }
+
+  .meta-row {
+    justify-self: stretch;
+    width: 100%;
   }
 
   .image-placeholder {
