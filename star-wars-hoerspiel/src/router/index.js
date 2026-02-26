@@ -7,12 +7,31 @@ const routes = {
   "/player": Player,
 };
 
+const baseUrl = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+
+function normalizeToRoute(pathname) {
+  if (baseUrl && pathname.startsWith(baseUrl)) {
+    const rest = pathname.slice(baseUrl.length) || "/";
+    return rest.startsWith("/") ? rest : `/${rest}`;
+  }
+
+  return pathname in routes ? pathname : "/";
+}
+
+function toBrowserPath(routePath) {
+  if (baseUrl === "") {
+    return routePath;
+  }
+
+  return routePath === "/" ? `${baseUrl}/` : `${baseUrl}${routePath}`;
+}
+
 const state = reactive({
-  currentPath: window.location.pathname in routes ? window.location.pathname : "/",
+  currentPath: normalizeToRoute(window.location.pathname),
 });
 
-function setPath(path) {
-  state.currentPath = path in routes ? path : "/";
+function setPath(pathname) {
+  state.currentPath = normalizeToRoute(pathname);
 }
 
 window.addEventListener("popstate", () => setPath(window.location.pathname));
@@ -23,11 +42,12 @@ export const router = {
       return;
     }
 
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, "", path);
+    const browserPath = toBrowserPath(path);
+    if (window.location.pathname !== browserPath) {
+      window.history.pushState({}, "", browserPath);
     }
 
-    setPath(path);
+    state.currentPath = path;
   },
 };
 
