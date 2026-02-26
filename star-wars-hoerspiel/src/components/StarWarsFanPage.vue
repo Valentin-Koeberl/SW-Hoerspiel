@@ -134,12 +134,15 @@ function start() {
  * Replace these URLs later with your own paths.
  * (placehold.co is stable and simple)
  */
+
+const BASE = import.meta.env.BASE_URL;
+
 const images = {
-  cloneWars: "/Klonarmee.webp",
-  jediCouncil: "/Rat_der_jedi.webp",
-  separatists: "/star_wars_separatist_logo_desktop_wallpaper_by_swmand4_d9hwtxc-fullview.jpg",
-  alexander: "https://placehold.co/256x256/png?text=Alexander",
-  valentin: "/Valentin_Profilbild.JPG",
+  cloneWars: `${BASE}Klonarmee.webp`,
+  jediCouncil: `${BASE}/Rat_der_jedi.webp`,
+  separatists: `${BASE}/star_wars_separatist_logo_desktop_wallpaper_by_swmand4_d9hwtxc-fullview.jpg`,
+  alexander: `${BASE}https://placehold.co/256x256/png?text=Alexander`,
+  valentin: `${BASE}/Valentin_Profilbild.JPG`,
 };
 
 function onMouseMove(e) {
