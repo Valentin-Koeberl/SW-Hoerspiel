@@ -153,8 +153,8 @@ function onMouseMove(e) {
   document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
 
-  document.documentElement.style.setProperty("--mx2", `${(x * 100 + 6).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100 - 6).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
 }
 
 onMounted(() => window.addEventListener("mousemove", onMouseMove, { passive: true }));
