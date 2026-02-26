@@ -19,7 +19,7 @@
 
         <button type="button" class="playBtnWhite" @click="start" aria-label="Hörspiel starten">
           <span class="playBtnWhite__icon" aria-hidden="true">▶</span>
-          <span class="playBtnWhite__text">{{ started ? "Weiter" : "Play" }}</span>
+          <span class="playBtnWhite__text">Play</span>
         </button>
 
         <!-- Bigger, perfectly centered scroll hint -->
@@ -30,14 +30,6 @@
 
       <!-- CONTENT BELOW HERO -->
       <section id="content" class="stack" aria-label="Landing Inhalt">
-        <!-- Optional: placeholder for player switch (no player component implemented) -->
-        <section v-if="started" class="card placeholder" aria-label="Player Platzhalter">
-          <h2 class="sectionTitle">Player</h2>
-          <p class="muted">
-            Hier würde jetzt die Player-Komponente gerendert werden (absichtlich nicht implementiert).
-          </p>
-        </section>
-
         <!-- Vorgeschichte (same background as footer) -->
         <section class="card glassCard" aria-label="Vorgeschichte">
           <h2 class="sectionTitle">Vorgeschichte</h2>
@@ -129,11 +121,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { getCurrentInstance, onMounted, onBeforeUnmount } from "vue";
 
-const started = ref(false);
+const { proxy } = getCurrentInstance();
+
 function start() {
-  started.value = true;
+  proxy.$router.push("/player");
 }
 
 /**
@@ -339,11 +332,6 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   border-radius: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.10);
   padding: 1.25rem 1.35rem;
-}
-
-/* Default card background (kept for placeholder) */
-.placeholder {
-  background: rgba(0, 0, 0, 0.45);
 }
 
 /* Same background as footer */
