@@ -21,38 +21,39 @@
 
       <section v-else class="player-layout">
         <section class="media-column">
+          <div class="image-placeholder">
+            <img
+                v-if="currentSegment.imageUrl"
+                :src="currentSegment.imageUrl"
+                :alt="`Segmentbild: ${currentSegment.title}`"
+            />
+            <span v-else>Kein Bild für dieses Segment</span>
+          </div>
+
           <div class="media-head">
             <div class="media-head__text">
               <h1 class="player-title">{{ currentSegment.title }}</h1>
               <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
             </div>
 
+            <!-- Controls: Waves links neben Button + vertikal zentriert zum Textblock -->
             <div class="media-head__controls">
+              <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+
               <button class="play-btn" type="button" @click="togglePlayback">
                 <span class="play-btn__icon" aria-hidden="true">{{ isPlaying ? "❚❚" : "▶" }}</span>
                 <span>{{ isPlaying ? "Pause" : "Play" }}</span>
               </button>
-
-              <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
             </div>
           </div>
 
-          <div class="image-placeholder">
-            <img
-              v-if="currentSegment.imageUrl"
-              :src="currentSegment.imageUrl"
-              :alt="`Segmentbild: ${currentSegment.title}`"
-            />
-            <span v-else>Kein Bild für dieses Segment</span>
-          </div>
-
           <audio
-            ref="audioRef"
-            :src="currentSegment.audioUrl"
-            @timeupdate="handleTimeUpdate"
-            @ended="handleSegmentEnd"
+              ref="audioRef"
+              :src="currentSegment.audioUrl"
+              @timeupdate="handleTimeUpdate"
+              @ended="handleSegmentEnd"
           ></audio>
         </section>
 
@@ -62,11 +63,11 @@
               <h2 class="branch-title">Entscheidung erforderlich</h2>
               <div class="branch-grid">
                 <button
-                  v-for="branch in limitedBranches"
-                  :key="`${currentSegment.id}-${branch.targetSegmentId}`"
-                  class="branch-btn"
-                  type="button"
-                  @click="selectBranch(branch)"
+                    v-for="branch in limitedBranches"
+                    :key="`${currentSegment.id}-${branch.targetSegmentId}`"
+                    class="branch-btn"
+                    type="button"
+                    @click="selectBranch(branch)"
                 >
                   {{ branch.label }}
                 </button>
@@ -103,7 +104,7 @@ const segmentFinished = ref(false);
 const isSmallScreen = ref(false);
 const { proxy } = getCurrentInstance();
 const { state, currentSegment, progress, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } =
-  usePlayerStore();
+    usePlayerStore();
 
 const limitedBranches = computed(() => (currentSegment.value.branches ?? []).slice(0, 3));
 const showBranches = computed(() => segmentFinished.value && limitedBranches.value.length > 0);
@@ -134,47 +135,37 @@ onBeforeUnmount(() => {
 });
 
 watch(
-  () => currentSegment.value.id,
-  async () => {
-    segmentFinished.value = false;
-    await nextTick();
+    () => currentSegment.value.id,
+    async () => {
+      segmentFinished.value = false;
+      await nextTick();
 
-    const audio = audioRef.value;
-    if (!audio) {
-      return;
-    }
+      const audio = audioRef.value;
+      if (!audio) return;
 
-    audio.currentTime = state.currentTime || 0;
-    if (isPlaying.value && !isSmallScreen.value) {
-      await audio.play().catch(() => {
-        isPlaying.value = false;
-      });
-    }
-  },
-  { immediate: true },
+      audio.currentTime = state.currentTime || 0;
+      if (isPlaying.value && !isSmallScreen.value) {
+        await audio.play().catch(() => {
+          isPlaying.value = false;
+        });
+      }
+    },
+    { immediate: true },
 );
 
 watch(isSmallScreen, (small) => {
-  if (!small) {
-    return;
-  }
+  if (!small) return;
 
   const audio = audioRef.value;
-  if (audio) {
-    audio.pause();
-  }
+  if (audio) audio.pause();
   isPlaying.value = false;
 });
 
 function togglePlayback() {
-  if (isSmallScreen.value) {
-    return;
-  }
+  if (isSmallScreen.value) return;
 
   const audio = audioRef.value;
-  if (!audio) {
-    return;
-  }
+  if (!audio) return;
 
   if (isPlaying.value) {
     audio.pause();
@@ -183,13 +174,13 @@ function togglePlayback() {
   }
 
   audio
-    .play()
-    .then(() => {
-      isPlaying.value = true;
-    })
-    .catch(() => {
-      isPlaying.value = false;
-    });
+      .play()
+      .then(() => {
+        isPlaying.value = true;
+      })
+      .catch(() => {
+        isPlaying.value = false;
+      });
 }
 
 function handleTimeUpdate(event) {
@@ -204,9 +195,7 @@ function handleSegmentEnd() {
   isPlaying.value = false;
   segmentFinished.value = true;
 
-  if (!currentSegment.value.autoplayNext || !currentSegment.value.nextSegmentId) {
-    return;
-  }
+  if (!currentSegment.value.autoplayNext || !currentSegment.value.nextSegmentId) return;
 
   const nextId = currentSegment.value.nextSegmentId;
   state.autoplayTransitioning = true;
@@ -260,46 +249,85 @@ function goHome() {
   transform: scale(0.985);
 }
 
+/* === GRID: row1 = Bild + Right column; row2 = Head/Controls === */
 .player-layout {
   display: grid;
   grid-template-columns: minmax(760px, 2.35fr) minmax(320px, 1fr);
+  grid-template-rows: auto auto;
   gap: 1.2rem;
-  align-items: stretch;
+  align-items: start;
 }
 
+/* media-column "entpacken": Bild und Head direkt im parent-grid platzieren */
 .media-column {
-  display: grid;
-  align-content: start;
+  display: contents;
 }
 
+/* Bild: links oben */
+.image-placeholder {
+  grid-column: 1;
+  grid-row: 1;
+
+  width: 100%;
+  min-height: 510px;
+  aspect-ratio: 16 / 8;
+  margin: 0;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+}
+
+.image-placeholder img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Head unter dem Bild */
 .media-head {
+  grid-column: 1;
+  grid-row: 2;
+
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.9rem;
-  margin-bottom: 0.75rem;
+  /* wichtig: vertikal zentrieren, damit Button+Waves mittig zur Textfläche sitzen */
+  align-items: center;
+
+  gap: 1rem;
+  margin-top: 0.95rem;
+  margin-bottom: 0.25rem;
 }
 
 .media-head__text {
   flex: 1;
+  min-width: 0;
 }
 
+/* Controls: inline-flex, waves links, alles mittig */
 .media-head__controls {
-  min-width: 144px;
-  display: grid;
-  justify-items: end;
-  gap: 0.35rem;
+  display: inline-flex;
+  align-items: center; /* vertikal mittig im Textbereich */
+  justify-content: flex-end;
+  gap: 0.8rem;
+  min-width: 0;
+  align-self: center;
 }
 
 .right-column {
+  grid-column: 2;
+  grid-row: 1;
+
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  align-self: stretch; /* nimmt Höhe der Bild-Row an */
+  min-height: 0;
 }
 
 .decision-column {
   border-radius: 1rem;
-  padding: 0.9rem;
+  padding: 0.95rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -307,17 +335,23 @@ function goHome() {
 .decision-column--active {
   border: 1px solid transparent;
   background:
-    linear-gradient(rgba(8, 10, 20, 0.86), rgba(8, 10, 20, 0.86)) padding-box,
-    linear-gradient(120deg, #2563eb, #ef4444, #2563eb) border-box;
+      linear-gradient(rgba(8, 10, 20, 0.86), rgba(8, 10, 20, 0.86)) padding-box,
+      linear-gradient(120deg, #2563eb, #ef4444, #2563eb) border-box;
   background-size: 220% 220%;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 36px rgba(37, 99, 235, 0.28), 0 0 30px rgba(239, 68, 68, 0.22);
   animation: decisionGlow 2.6s ease infinite;
 }
 
 @keyframes decisionGlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .back-btn,
@@ -361,62 +395,61 @@ function goHome() {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
+/* Title/SubTitle kleiner + mehr Abstand zum Bild */
 .player-title {
   margin: 0;
-  font-size: clamp(2.1rem, 3vw, 3.4rem);
+  font-size: clamp(1.55rem, 2.1vw, 2.35rem);
   text-transform: uppercase;
   text-align: left;
-  line-height: 1.08;
+  line-height: 1.06;
 }
 
 .player-subtitle {
-  margin: 0.2rem 0 0;
+  margin: 0.45rem 0 0;
   color: rgba(255, 255, 255, 0.84);
-  font-size: clamp(0.92rem, 1.25vw, 1.22rem);
+  font-size: clamp(0.9rem, 1.05vw, 1.05rem);
   text-align: left;
 }
 
-.image-placeholder {
-  width: 100%;
-  min-height: 510px;
-  aspect-ratio: 16 / 8;
-  margin: 0;
-  border-radius: 1rem;
-  overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
-  display: grid;
-  place-items: center;
-}
-
-.image-placeholder img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
+/* Waves (links neben Button) */
 .audio-waves {
-  height: 24px;
+  height: 22px;
   display: flex;
   align-items: flex-end;
-  gap: 5px;
+  gap: 4px;
 }
 
 .audio-waves span {
-  width: 5px;
+  width: 4px;
   height: 8px;
   border-radius: 999px;
   background: linear-gradient(180deg, #60a5fa, #ef4444);
   animation: wave 1s ease-in-out infinite;
 }
 
-.audio-waves span:nth-child(2) { animation-delay: 0.12s; }
-.audio-waves span:nth-child(3) { animation-delay: 0.24s; }
-.audio-waves span:nth-child(4) { animation-delay: 0.36s; }
-.audio-waves span:nth-child(5) { animation-delay: 0.48s; }
+.audio-waves span:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.audio-waves span:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.audio-waves span:nth-child(4) {
+  animation-delay: 0.36s;
+}
+.audio-waves span:nth-child(5) {
+  animation-delay: 0.48s;
+}
 
 @keyframes wave {
-  0%, 100% { height: 8px; opacity: 0.6; }
-  50% { height: 22px; opacity: 1; }
+  0%,
+  100% {
+    height: 8px;
+    opacity: 0.6;
+  }
+  50% {
+    height: 22px;
+    opacity: 1;
+  }
 }
 
 .branch-title,
@@ -441,9 +474,10 @@ function goHome() {
   border-color: rgba(255, 255, 255, 0.75);
 }
 
+/* Meta dockt an Unterkante des Bildes (weil right-column die Bildhöhe hat) */
 .meta-row {
   margin-top: auto;
-  padding-top: 0.9rem;
+  padding-top: 0;
   display: grid;
   gap: 0.45rem;
   color: rgba(255, 255, 255, 0.85);
@@ -473,14 +507,25 @@ function goHome() {
   background: rgba(40, 0, 0, 0.22);
 }
 
+/* Background effects */
 .galaxyAccent {
   position: absolute;
   inset: 0;
   pointer-events: none;
   opacity: 1;
   background:
-    radial-gradient(420px 300px at var(--mx) var(--my), rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0.08) 38%, rgba(0, 0, 0, 0) 72%),
-    radial-gradient(420px 300px at var(--mx2) var(--my2), rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.08) 38%, rgba(0, 0, 0, 0) 72%);
+      radial-gradient(
+          420px 300px at var(--mx) var(--my),
+          rgba(37, 99, 235, 0.2) 0%,
+          rgba(37, 99, 235, 0.08) 38%,
+          rgba(0, 0, 0, 0) 72%
+      ),
+      radial-gradient(
+          420px 300px at var(--mx2) var(--my2),
+          rgba(239, 68, 68, 0.2) 0%,
+          rgba(239, 68, 68, 0.08) 38%,
+          rgba(0, 0, 0, 0) 72%
+      );
   filter: blur(10px);
   mix-blend-mode: screen;
 }
@@ -515,13 +560,17 @@ function goHome() {
   background: radial-gradient(circle, rgba(239, 68, 68, 0.7) 0%, rgba(239, 68, 68, 0) 70%);
 }
 
+/* Responsive: 1-spaltig */
 @media (max-width: 1200px) {
   .player-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
   }
 
   .right-column {
-    min-height: auto;
+    grid-column: 1;
+    grid-row: 3;
+    align-self: auto;
   }
 
   .meta-row {
