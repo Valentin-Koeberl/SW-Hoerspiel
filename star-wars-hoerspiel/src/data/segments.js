@@ -1,10 +1,12 @@
+const BASE = import.meta.env.BASE_URL;
+
 export const segments = [
   {
     id: "intro",
-    title: "Trupp 705",
-    subtitle: "Ein Notruf aus dem Orbit von Vantorra IX",
-    audioUrl: "https://www2.cs.uic.edu/~i101/SoundFiles/ImperialMarch60.wav",
-    imageUrl: "/star-wars.png",
+    title: "Intro: Willkommen",
+    subtitle: "Alles was du vor dem Schauen wissen musst!",
+    audioUrl: `${BASE}/Sounds/Intro 0.mp3`,
+    imageUrl: `${BASE}Klonarmee.webp`,
     branches: [
       { label: "Direkt landen", targetSegmentId: "landing" },
       { label: "Erst den Orbit sichern", targetSegmentId: "orbit" },
