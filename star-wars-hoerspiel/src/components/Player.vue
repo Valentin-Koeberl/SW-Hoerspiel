@@ -21,24 +21,31 @@
 
       <section v-else class="player-layout">
         <section class="media-column">
+          <div class="media-head">
+            <div class="media-head__text">
+              <h1 class="player-title">{{ currentSegment.title }}</h1>
+              <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
+            </div>
+
+            <div class="media-head__controls">
+              <button class="play-btn" type="button" @click="togglePlayback">
+                <span class="play-btn__icon" aria-hidden="true">{{ isPlaying ? "❚❚" : "▶" }}</span>
+                <span>{{ isPlaying ? "Pause" : "Play" }}</span>
+              </button>
+
+              <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+
           <div class="image-placeholder">
             <img
-                v-if="currentSegment.imageUrl"
-                :src="currentSegment.imageUrl"
-                :alt="`Segmentbild: ${currentSegment.title}`"
+              v-if="currentSegment.imageUrl"
+              :src="currentSegment.imageUrl"
+              :alt="`Segmentbild: ${currentSegment.title}`"
             />
             <span v-else>Kein Bild für dieses Segment</span>
-          </div>
-          <h1 class="player-title">{{ currentSegment.title }}</h1>
-          <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
-
-
-          <button class="play-btn" type="button" @click="togglePlayback">
-            {{ isPlaying ? "Pause" : "Play" }}
-          </button>
-
-          <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
-            <span></span><span></span><span></span><span></span><span></span>
           </div>
 
           <audio
@@ -49,36 +56,38 @@
           ></audio>
         </section>
 
-        <aside class="decision-column" :class="{ 'decision-column--active': showBranches }">
-          <section v-if="showBranches" class="branch-section" aria-label="Entscheidung">
-            <h2 class="branch-title">Entscheidung erforderlich</h2>
-            <div class="branch-grid">
-              <button
-                v-for="branch in limitedBranches"
-                :key="`${currentSegment.id}-${branch.targetSegmentId}`"
-                class="branch-btn"
-                type="button"
-                @click="selectBranch(branch)"
-              >
-                {{ branch.label }}
-              </button>
-            </div>
+        <aside class="right-column">
+          <section class="decision-column" :class="{ 'decision-column--active': showBranches }">
+            <section v-if="showBranches" class="branch-section" aria-label="Entscheidung">
+              <h2 class="branch-title">Entscheidung erforderlich</h2>
+              <div class="branch-grid">
+                <button
+                  v-for="branch in limitedBranches"
+                  :key="`${currentSegment.id}-${branch.targetSegmentId}`"
+                  class="branch-btn"
+                  type="button"
+                  @click="selectBranch(branch)"
+                >
+                  {{ branch.label }}
+                </button>
+              </div>
+            </section>
+
+            <p v-else-if="currentSegment.autoplayNext" class="autoplay-info">
+              Nächstes Segment startet automatisch nach Ende der Audiodatei ...
+            </p>
+
+            <p v-else-if="limitedBranches.length" class="autoplay-info">
+              Entscheidungen erscheinen, sobald das Audio vollständig abgespielt wurde.
+            </p>
           </section>
 
-          <p v-else-if="currentSegment.autoplayNext" class="autoplay-info">
-            Nächstes Segment startet automatisch nach Ende der Audiodatei ...
-          </p>
-
-          <p v-else-if="limitedBranches.length" class="autoplay-info">
-            Entscheidungen erscheinen, sobald das Audio vollständig abgespielt wurde.
-          </p>
+          <section class="meta-row">
+            <div>Fortschritt: {{ progress }}%</div>
+            <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
+            <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
+          </section>
         </aside>
-
-        <section class="meta-row">
-          <div>Fortschritt: {{ progress }}%</div>
-          <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
-          <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
-        </section>
       </section>
     </main>
   </div>
@@ -107,10 +116,10 @@ function onMouseMove(event) {
   const x = event.clientX / window.innerWidth;
   const y = event.clientY / window.innerHeight;
 
-  document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx", `${(x * 100 - 4.5).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--mx2", `${(x * 100 - 5).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100 + 5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100 + 4.5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
 }
 
 onMounted(() => {
@@ -241,7 +250,7 @@ function goHome() {
   background: rgba(10, 10, 14, 0.5);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   padding: clamp(1rem, 1.3vw, 1.5rem);
   transition: opacity 320ms ease, transform 320ms ease;
 }
@@ -253,20 +262,42 @@ function goHome() {
 
 .player-layout {
   display: grid;
-  grid-template-columns: minmax(760px, 2.35fr) minmax(300px, 1fr);
-  grid-template-areas:
-    "media decision"
-    "media meta";
+  grid-template-columns: minmax(760px, 2.35fr) minmax(320px, 1fr);
   gap: 1.2rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 .media-column {
-  grid-area: media;
+  display: grid;
+  align-content: start;
+}
+
+.media-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.media-head__text {
+  flex: 1;
+}
+
+.media-head__controls {
+  min-width: 144px;
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 .decision-column {
-  grid-area: decision;
   border-radius: 1rem;
   padding: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -309,6 +340,18 @@ function goHome() {
   margin-bottom: 0.8rem;
 }
 
+.play-btn {
+  min-width: 135px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-content: center;
+}
+
+.play-btn__icon {
+  font-size: 0.95rem;
+}
+
 .back-btn:hover,
 .play-btn:hover,
 .branch-btn:hover,
@@ -320,15 +363,16 @@ function goHome() {
 
 .player-title {
   margin: 0;
-  font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+  font-size: clamp(2.1rem, 3vw, 3.4rem);
   text-transform: uppercase;
   text-align: left;
+  line-height: 1.08;
 }
 
 .player-subtitle {
-  margin: 0.45rem 0 1rem;
+  margin: 0.2rem 0 0;
   color: rgba(255, 255, 255, 0.84);
-  font-size: clamp(1rem, 1vw, 1rem);
+  font-size: clamp(0.92rem, 1.25vw, 1.22rem);
   text-align: left;
 }
 
@@ -336,7 +380,7 @@ function goHome() {
   width: 100%;
   min-height: 510px;
   aspect-ratio: 16 / 8;
-  margin: 0 auto 1rem;
+  margin: 0;
   border-radius: 1rem;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.35);
@@ -350,14 +394,8 @@ function goHome() {
   object-fit: cover;
 }
 
-.play-btn {
-  min-width: 130px;
-  display: block;
-}
-
 .audio-waves {
   height: 24px;
-  margin: 0.6rem 0 0;
   display: flex;
   align-items: flex-end;
   gap: 5px;
@@ -404,13 +442,14 @@ function goHome() {
 }
 
 .meta-row {
-  grid-area: meta;
-  justify-self: end;
-  width: min(360px, 100%);
+  margin-top: auto;
+  padding-top: 0.9rem;
   display: grid;
   gap: 0.45rem;
   color: rgba(255, 255, 255, 0.85);
   font-size: 0.88rem;
+  text-align: left;
+  justify-items: start;
 }
 
 .reset-btn {
@@ -461,33 +500,32 @@ function goHome() {
   border-radius: 999px;
   transform: translate(-50%, -50%);
   filter: blur(22px);
-  opacity: 0.5;
+  opacity: 0.56;
 }
 
 .cursorPulse::before {
   left: var(--mx);
   top: var(--my);
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, rgba(59, 130, 246, 0) 70%);
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.7) 0%, rgba(37, 99, 235, 0) 70%);
 }
 
 .cursorPulse::after {
   left: var(--mx2);
   top: var(--my2);
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.58) 0%, rgba(239, 68, 68, 0) 70%);
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.7) 0%, rgba(239, 68, 68, 0) 70%);
 }
 
 @media (max-width: 1200px) {
   .player-layout {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "media"
-      "decision"
-      "meta";
+  }
+
+  .right-column {
+    min-height: auto;
   }
 
   .meta-row {
-    justify-self: stretch;
-    width: 100%;
+    margin-top: 0.9rem;
   }
 
   .image-placeholder {

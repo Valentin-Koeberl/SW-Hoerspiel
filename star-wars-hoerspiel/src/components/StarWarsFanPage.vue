@@ -150,11 +150,11 @@ function onMouseMove(e) {
   const x = e.clientX / window.innerWidth;
   const y = e.clientY / window.innerHeight;
 
-  document.documentElement.style.setProperty("--mx", `${(x * 100).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx", `${(x * 100 - 4.5).toFixed(2)}%`);
   document.documentElement.style.setProperty("--my", `${(y * 100).toFixed(2)}%`);
 
-  document.documentElement.style.setProperty("--mx2", `${(x * 100 - 5).toFixed(2)}%`);
-  document.documentElement.style.setProperty("--my2", `${(y * 100 + 5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--mx2", `${(x * 100 + 4.5).toFixed(2)}%`);
+  document.documentElement.style.setProperty("--my2", `${(y * 100).toFixed(2)}%`);
 }
 
 onMounted(() => window.addEventListener("mousemove", onMouseMove, { passive: true }));
