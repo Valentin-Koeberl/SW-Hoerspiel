@@ -21,17 +21,17 @@
 
       <section v-else class="player-layout">
         <section class="media-column">
-          <h1 class="player-title">{{ currentSegment.title }}</h1>
-          <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
-
           <div class="image-placeholder">
             <img
-              v-if="currentSegment.imageUrl"
-              :src="currentSegment.imageUrl"
-              :alt="`Segmentbild: ${currentSegment.title}`"
+                v-if="currentSegment.imageUrl"
+                :src="currentSegment.imageUrl"
+                :alt="`Segmentbild: ${currentSegment.title}`"
             />
             <span v-else>Kein Bild für dieses Segment</span>
           </div>
+          <h1 class="player-title">{{ currentSegment.title }}</h1>
+          <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
+
 
           <button class="play-btn" type="button" @click="togglePlayback">
             {{ isPlaying ? "Pause" : "Play" }}
@@ -241,7 +241,7 @@ function goHome() {
   background: rgba(10, 10, 14, 0.5);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   padding: clamp(1rem, 1.3vw, 1.5rem);
   transition: opacity 320ms ease, transform 320ms ease;
 }
@@ -320,7 +320,7 @@ function goHome() {
 
 .player-title {
   margin: 0;
-  font-size: clamp(2.1rem, 3vw, 3.4rem);
+  font-size: clamp(1.8rem, 2.5vw, 2.5rem);
   text-transform: uppercase;
   text-align: left;
 }
@@ -328,7 +328,7 @@ function goHome() {
 .player-subtitle {
   margin: 0.45rem 0 1rem;
   color: rgba(255, 255, 255, 0.84);
-  font-size: clamp(0.92rem, 1.25vw, 1.22rem);
+  font-size: clamp(1rem, 1vw, 1rem);
   text-align: left;
 }
 
