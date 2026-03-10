@@ -19,6 +19,22 @@
         </p>
       </section>
 
+      <section v-else-if="showThankYouScreen" class="thank-you-screen" aria-live="polite">
+        <h1 class="player-title">Möge die Macht mit dir sein!</h1>
+        <p class="player-subtitle">
+          Danke, dass du Star Wars: Trupp 705 getestet hast. Schon bald wird die Geschichte weiter erzählt! Bleibt gespannt!
+        </p>
+
+        <div class="thank-you-meta">
+          <div>Fortschritt: {{ progress }}%</div>
+          <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
+        </div>
+
+        <div class="thank-you-actions">
+          <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
+        </div>
+      </section>
+
       <section v-else class="player-layout">
         <section class="media-column">
           <div class="image-placeholder">
@@ -75,11 +91,11 @@
             </section>
 
             <p v-else-if="currentSegment.autoplayNext" class="autoplay-info">
-              Nächstes Segment startet automatisch nach Ende der Audiodatei ...
+              Nächstes Segment startet automatisch, keine Entscheidung notwendig.
             </p>
 
             <p v-else-if="limitedBranches.length" class="autoplay-info">
-              Entscheidungen erscheinen, sobald das Audio vollständig abgespielt wurde.
+              Die nächste Entscheidung kommt schon bald!
             </p>
           </section>
 
@@ -102,12 +118,34 @@ const audioRef = ref(null);
 const isPlaying = ref(false);
 const segmentFinished = ref(false);
 const isSmallScreen = ref(false);
+const showThankYouScreen = ref(false);
 const { proxy } = getCurrentInstance();
-const { state, currentSegment, progress, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } =
-    usePlayerStore();
+
+/* Hier definierst du die maximal mögliche Anzahl an Entscheidungen.
+   Diesen Wert kannst du jederzeit anpassen. */
+const MAX_DECISIONS = 2;
+
+const { state, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } = usePlayerStore();
 
 const limitedBranches = computed(() => (currentSegment.value.branches ?? []).slice(0, 3));
 const showBranches = computed(() => segmentFinished.value && limitedBranches.value.length > 0);
+
+const progress = computed(() => {
+  if (MAX_DECISIONS <= 0) return 0;
+
+  const takenDecisions = state.decisions.length;
+  const percent = Math.floor((takenDecisions / MAX_DECISIONS) * 100);
+
+  return Math.min(percent, 100);
+});
+
+const isLastSegment = computed(() => {
+  const hasBranches = limitedBranches.value.length > 0;
+  const hasNextSegment = Boolean(currentSegment.value.nextSegmentId);
+  const hasAutoplayNext = Boolean(currentSegment.value.autoplayNext);
+
+  return !hasBranches && !hasNextSegment && !hasAutoplayNext;
+});
 
 function updateScreenState() {
   isSmallScreen.value = window.matchMedia("(max-width: 900px)").matches;
@@ -138,6 +176,7 @@ watch(
     () => currentSegment.value.id,
     async () => {
       segmentFinished.value = false;
+      showThankYouScreen.value = false;
       await nextTick();
 
       const audio = audioRef.value;
@@ -162,7 +201,7 @@ watch(isSmallScreen, (small) => {
 });
 
 function togglePlayback() {
-  if (isSmallScreen.value) return;
+  if (isSmallScreen.value || showThankYouScreen.value) return;
 
   const audio = audioRef.value;
   if (!audio) return;
@@ -188,12 +227,18 @@ function handleTimeUpdate(event) {
 }
 
 function selectBranch(branch) {
+  showThankYouScreen.value = false;
   chooseBranch(branch);
 }
 
 function handleSegmentEnd() {
   isPlaying.value = false;
   segmentFinished.value = true;
+
+  if (progress.value >= 100 && isLastSegment.value) {
+    showThankYouScreen.value = true;
+    return;
+  }
 
   if (!currentSegment.value.autoplayNext || !currentSegment.value.nextSegmentId) return;
 
@@ -214,6 +259,7 @@ function resetWholeStory() {
 
   isPlaying.value = false;
   segmentFinished.value = false;
+  showThankYouScreen.value = false;
   resetProgress();
 }
 
@@ -292,12 +338,11 @@ function goHome() {
 
   display: flex;
   justify-content: space-between;
-  /* wichtig: vertikal zentrieren, damit Button+Waves mittig zur Textfläche sitzen */
   align-items: center;
 
   gap: 1rem;
-  margin-top: 0.95rem;
-  margin-bottom: 0.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.95rem;
 }
 
 .media-head__text {
@@ -308,7 +353,7 @@ function goHome() {
 /* Controls: inline-flex, waves links, alles mittig */
 .media-head__controls {
   display: inline-flex;
-  align-items: center; /* vertikal mittig im Textbereich */
+  align-items: center;
   justify-content: flex-end;
   gap: 0.8rem;
   min-width: 0;
@@ -321,7 +366,7 @@ function goHome() {
 
   display: flex;
   flex-direction: column;
-  align-self: stretch; /* nimmt Höhe der Bild-Row an */
+  align-self: stretch;
   min-height: 0;
 }
 
@@ -474,7 +519,7 @@ function goHome() {
   border-color: rgba(255, 255, 255, 0.75);
 }
 
-/* Meta dockt an Unterkante des Bildes (weil right-column die Bildhöhe hat) */
+/* Meta dockt an Unterkante des Bildes */
 .meta-row {
   margin-top: auto;
   padding-top: 0;
@@ -507,7 +552,38 @@ function goHome() {
   background: rgba(40, 0, 0, 0.22);
 }
 
-/* Background effects */
+.thank-you-screen {
+  min-height: 52dvh;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 1.8rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  background:
+      linear-gradient(rgba(8, 10, 20, 0.88), rgba(8, 10, 20, 0.88)) padding-box,
+      linear-gradient(120deg, rgba(37, 99, 235, 0.8), rgba(239, 68, 68, 0.8), rgba(37, 99, 235, 0.8)) border-box;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 36px rgba(37, 99, 235, 0.2), 0 0 28px rgba(239, 68, 68, 0.16);
+}
+
+.thank-you-screen .player-title,
+.thank-you-screen .player-subtitle {
+  text-align: center;
+}
+
+.thank-you-meta {
+  display: grid;
+  gap: 0.45rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.95rem;
+}
+
+.thank-you-actions {
+  display: flex;
+  justify-content: center;
+}
+
 .galaxyAccent {
   position: absolute;
   inset: 0;
