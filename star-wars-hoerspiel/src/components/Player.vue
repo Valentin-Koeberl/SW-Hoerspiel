@@ -8,104 +8,152 @@
       <div class="cursorPulse"></div>
     </div>
 
-    <main class="player-shell" :class="{ fade: state.autoplayTransitioning }">
-      <button class="back-btn" type="button" @click="goHome">← Zur Startseite</button>
+    <main class="player-shell" :class="{ fade: session.autoplayTransitioning }">
+      <div class="top-actions">
+        <button class="back-btn" type="button" @click="goHome">Zur Startseite</button>
+        <button v-if="currentBook.isPlayable && !showThankYouScreen" class="reset-btn" type="button" @click="resetWholeStory">
+          Kapitel neustarten
+        </button>
+      </div>
 
-      <section v-if="isSmallScreen" class="mobile-blocker" aria-live="polite">
-        <h1 class="player-title">Nicht verfügbar auf kleinen Displays</h1>
+      <section v-if="!currentBook.isPlayable" class="thank-you-screen" aria-live="polite">
+        <h1 class="player-title">{{ currentBook.title }}</h1>
         <p class="player-subtitle">
-          Dieses Hörspiel kann aktuell nur auf Laptop/Tablet im Querformat abgespielt werden. Bitte nutze eine größere
-          Bildschirmfläche.
+          Für dieses Kapitel sind aktuell noch keine Audios hinterlegt. Sobald Sounds im Ordner liegen, kann das Kapitel
+          direkt in der Datenstruktur freigeschaltet werden.
         </p>
       </section>
 
-      <section v-else-if="showThankYouScreen" class="thank-you-screen" aria-live="polite">
-        <h1 class="player-title">Möge die Macht mit dir sein!</h1>
+      <section v-else-if="isSmallScreen" class="mobile-blocker" aria-live="polite">
+        <h1 class="player-title">Nicht verfügbar auf kleinen Displays</h1>
         <p class="player-subtitle">
-          Danke, dass du Star Wars: Trupp 705 getestet hast. Schon bald wird die Geschichte weiter erzählt! Bleibt gespannt!
+          Dieses Hörspiel kann aktuell nur auf Laptop oder Tablet im Querformat abgespielt werden.
         </p>
-
-        <div class="thank-you-meta">
-          <div>Fortschritt: {{ progress }}%</div>
-          <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
-        </div>
-
-        <div class="thank-you-actions">
-          <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
-        </div>
       </section>
 
       <section v-else class="player-layout">
         <section class="media-column">
+          <section class="chapter-timeline" aria-label="Kapitel-Fortschritt">
+            <div class="chapter-timeline__header">
+              <div>
+                <div class="media-head__text">
+                  <p class="player-kicker">Trupp 705 · {{ currentBook.title }}</p>
+                  <h1 class="player-title">{{ currentSegment.title }}</h1>
+                  <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
+                </div>
+              </div>
+              <div class="chapter-timeline__summary">{{ completedStepCount }}/{{ totalStepCount }} Stufen geschafft</div>
+            </div>
+
+            <div class="chapter-timeline__track">
+              <div
+                v-for="step in currentBook.timelineSteps"
+                :key="step"
+                class="chapter-timeline__step"
+                :class="{
+                  'chapter-timeline__step--done': completedSteps.includes(step),
+                  'chapter-timeline__step--current': currentStep === step,
+                }"
+              >
+                <span class="chapter-timeline__dot"></span>
+              </div>
+            </div>
+          </section>
+
           <div class="image-placeholder">
-            <img
-                v-if="currentSegment.imageUrl"
-                :src="currentSegment.imageUrl"
-                :alt="`Segmentbild: ${currentSegment.title}`"
-            />
+            <img v-if="currentSceneImage" :src="currentSceneImage" :alt="`Segmentbild: ${currentSegment.title}`" />
             <span v-else>Kein Bild für dieses Segment</span>
           </div>
 
-          <div class="media-head">
-            <div class="media-head__text">
-              <h1 class="player-title">{{ currentSegment.title }}</h1>
-              <p class="player-subtitle">{{ currentSegment.subtitle }}</p>
+          <section class="audio-controller" aria-label="Audio Controller">
+            <div class="audio-controller__timeline">
+              <span class="audio-controller__time">{{ formatTime(currentTime) }}</span>
+              <input
+                class="audio-controller__seek"
+                type="range"
+                min="0"
+                :max="duration || 0"
+                step="0.1"
+                :value="currentTime"
+                @input="handleSeek"
+              />
+              <span class="audio-controller__time">{{ formatTime(duration) }}</span>
             </div>
 
-            <!-- Controls: Waves links neben Button + vertikal zentriert zum Textblock -->
-            <div class="media-head__controls">
-              <div v-if="isPlaying" class="audio-waves" aria-label="Audio spielt">
-                <span></span><span></span><span></span><span></span><span></span>
-              </div>
-
-              <button class="play-btn" type="button" @click="togglePlayback">
-                <span class="play-btn__icon" aria-hidden="true">{{ isPlaying ? "❚❚" : "▶" }}</span>
-                <span>{{ isPlaying ? "Pause" : "Play" }}</span>
+            <div class="audio-controller__actions">
+              <button class="audio-controller__transport" type="button" aria-label="10 Sekunden zurück" @click="skipBy(-10)">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="audio-controller__skip audio-controller__skip--back">
+                  <path d="M12.5 6.5L6.5 12l6 5.5" />
+                  <path d="M18.5 6.5L12.5 12l6 5.5" />
+                </svg>
+              </button>
+              <button class="audio-controller__transport audio-controller__transport--primary" type="button" :aria-label="isPlaying ? 'Pause' : 'Play'" @click="togglePlayback">
+                <span aria-hidden="true">{{ isPlaying ? "❚❚" : "▶" }}</span>
+              </button>
+              <button class="audio-controller__transport" type="button" aria-label="10 Sekunden vor" @click="skipBy(10)">
+                <svg aria-hidden="true" viewBox="0 0 24 24" class="audio-controller__skip">
+                  <path d="M5.5 6.5L11.5 12l-6 5.5" />
+                  <path d="M11.5 6.5L17.5 12l-6 5.5" />
+                </svg>
               </button>
             </div>
-          </div>
+          </section>
 
           <audio
-              ref="audioRef"
-              :src="currentSegment.audioUrl"
-              @timeupdate="handleTimeUpdate"
-              @ended="handleSegmentEnd"
+            ref="audioRef"
+            :src="currentSegment.audioUrl"
+            @timeupdate="handleTimeUpdate"
+            @loadedmetadata="handleLoadedMetadata"
+            @ended="handleSegmentEnd"
           ></audio>
         </section>
-
-        <aside class="right-column">
-          <section class="decision-column" :class="{ 'decision-column--active': showBranches }">
-            <section v-if="showBranches" class="branch-section" aria-label="Entscheidung">
-              <h2 class="branch-title">Entscheidung erforderlich</h2>
-              <div class="branch-grid">
-                <button
-                    v-for="branch in limitedBranches"
-                    :key="`${currentSegment.id}-${branch.targetSegmentId}`"
-                    class="branch-btn"
-                    type="button"
-                    @click="selectBranch(branch)"
-                >
-                  {{ branch.label }}
-                </button>
-              </div>
-            </section>
-
-            <p v-else-if="currentSegment.autoplayNext" class="autoplay-info">
-              Nächstes Segment startet automatisch, keine Entscheidung notwendig.
-            </p>
-
-            <p v-else-if="limitedBranches.length" class="autoplay-info">
-              Die nächste Entscheidung kommt schon bald!
-            </p>
-          </section>
-
-          <section class="meta-row">
-            <div>Fortschritt: {{ progress }}%</div>
-            <div>Gespeicherte Entscheidungen: {{ state.decisions.length }}</div>
-            <button class="reset-btn" type="button" @click="resetWholeStory">Hörspiel neustarten</button>
-          </section>
-        </aside>
       </section>
+
+      <div v-if="showBranches" class="decision-popup" role="dialog" aria-modal="true" aria-labelledby="decision-title">
+        <div class="decision-popup__backdrop"></div>
+        <section class="decision-popup__card">
+          <h2 id="decision-title" class="branch-title">Frage am Ende der Audio</h2>
+          <p class="question-hint">Wähle eine Antwort. Dein Button bestimmt, welche nächste Lane abgespielt wird.</p>
+          <div class="branch-grid">
+            <button
+              v-for="branch in limitedBranches"
+              :key="`${currentSegment.id}-${branch.targetSegmentId}`"
+              class="branch-btn"
+              type="button"
+              @click="selectBranch(branch)"
+            >
+              {{ branch.label }}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div
+        v-else-if="showThankYouScreen"
+        class="decision-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chapter-complete-title"
+      >
+        <div class="decision-popup__backdrop"></div>
+        <section class="decision-popup__card decision-popup__card--complete">
+          <h2 id="chapter-complete-title" class="branch-title">Kapitel abgeschlossen</h2>
+          <p class="question-hint">
+            Du hast {{ currentBook.title }} abgeschlossen. {{ nextChapter ? `Als Nächstes wartet ${nextChapter.title}.` : "Weitere Kapitel folgen später." }}
+          </p>
+          <div class="complete-actions">
+            <button v-if="nextChapter" class="branch-btn" type="button" @click="goToNextChapter">
+              Nächstes Kapitel starten
+            </button>
+            <button class="branch-btn" type="button" @click="resetWholeStory">
+              Kapitel neu starten
+            </button>
+            <button class="branch-btn branch-btn--secondary" type="button" @click="goHome">
+              Zur Kapitelübersicht
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 </template>
@@ -113,33 +161,74 @@
 <script setup>
 import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { usePlayerStore } from "../composables/usePlayerStore";
+import { chapters, defaultChapterId } from "../data/audioBooks";
+import { getCurrentRoute } from "../router";
 
 const audioRef = ref(null);
 const isPlaying = ref(false);
 const segmentFinished = ref(false);
 const isSmallScreen = ref(false);
 const showThankYouScreen = ref(false);
+const duration = ref(0);
+const currentTime = ref(0);
 const { proxy } = getCurrentInstance();
+const route = getCurrentRoute();
+const chapterId = route.value.params?.bookId ?? defaultChapterId;
 
-/* Hier definierst du die maximal mögliche Anzahl an Entscheidungen.
-   Diesen Wert kannst du jederzeit anpassen. */
-const MAX_DECISIONS = 2;
+const { session, currentBook, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } =
+  usePlayerStore(chapterId);
 
-const { state, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } = usePlayerStore();
-
-const limitedBranches = computed(() => (currentSegment.value.branches ?? []).slice(0, 3));
+const limitedBranches = computed(() => (currentSegment.value?.branches ?? []).slice(0, 3));
 const showBranches = computed(() => segmentFinished.value && limitedBranches.value.length > 0);
+const currentSceneImage = computed(() => {
+  const segment = currentSegment.value;
+  if (!segment) {
+    return null;
+  }
 
+  const timeline = segment.imageTimeline ?? [];
+  if (!timeline.length) {
+    return segment.imageUrl ?? null;
+  }
+
+  let activeImage = timeline[0]?.image ?? segment.imageUrl ?? null;
+  for (const entry of timeline) {
+    if (currentTime.value >= entry.at) {
+      activeImage = entry.image;
+      continue;
+    }
+
+    break;
+  }
+
+  return activeImage;
+});
+const currentStep = computed(() => currentSegment.value?.step ?? 1);
+const completedSteps = computed(() => {
+  return [...new Set(session.value.visitedSegments.map((segmentId) => currentBook.value.segmentMap[segmentId]?.step).filter(Boolean))];
+});
+const totalStepCount = computed(() => currentBook.value.timelineSteps.length || 1);
+const completedStepCount = computed(() => completedSteps.value.length);
+const nextChapter = computed(() => {
+  const playableChapters = chapters.filter((chapter) => chapter.isPlayable);
+  const currentIndex = playableChapters.findIndex((chapter) => chapter.id === currentBook.value.id);
+
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  return playableChapters[currentIndex + 1] ?? null;
+});
 const progress = computed(() => {
-  if (MAX_DECISIONS <= 0) return 0;
-
-  const takenDecisions = state.decisions.length;
-  const percent = Math.floor((takenDecisions / MAX_DECISIONS) * 100);
-
+  const percent = Math.floor((completedStepCount.value / totalStepCount.value) * 100);
   return Math.min(percent, 100);
 });
 
 const isLastSegment = computed(() => {
+  if (!currentSegment.value) {
+    return true;
+  }
+
   const hasBranches = limitedBranches.value.length > 0;
   const hasNextSegment = Boolean(currentSegment.value.nextSegmentId);
   const hasAutoplayNext = Boolean(currentSegment.value.autoplayNext);
@@ -173,38 +262,49 @@ onBeforeUnmount(() => {
 });
 
 watch(
-    () => currentSegment.value.id,
-    async () => {
-      segmentFinished.value = false;
-      showThankYouScreen.value = false;
-      await nextTick();
+  () => currentSegment.value?.id,
+  async () => {
+    segmentFinished.value = false;
+    showThankYouScreen.value = false;
+    await nextTick();
 
-      const audio = audioRef.value;
-      if (!audio) return;
+    const audio = audioRef.value;
+    if (!audio || !currentSegment.value) {
+      return;
+    }
 
-      audio.currentTime = state.currentTime || 0;
-      if (isPlaying.value && !isSmallScreen.value) {
-        await audio.play().catch(() => {
-          isPlaying.value = false;
-        });
-      }
-    },
-    { immediate: true },
+    audio.currentTime = session.value.currentTime || 0;
+    currentTime.value = audio.currentTime;
+    if (isPlaying.value && !isSmallScreen.value) {
+      await audio.play().catch(() => {
+        isPlaying.value = false;
+      });
+    }
+  },
+  { immediate: true },
 );
 
 watch(isSmallScreen, (small) => {
-  if (!small) return;
+  if (!small) {
+    return;
+  }
 
   const audio = audioRef.value;
-  if (audio) audio.pause();
+  if (audio) {
+    audio.pause();
+  }
   isPlaying.value = false;
 });
 
 function togglePlayback() {
-  if (isSmallScreen.value || showThankYouScreen.value) return;
+  if (isSmallScreen.value || showThankYouScreen.value || !currentSegment.value) {
+    return;
+  }
 
   const audio = audioRef.value;
-  if (!audio) return;
+  if (!audio) {
+    return;
+  }
 
   if (isPlaying.value) {
     audio.pause();
@@ -212,18 +312,51 @@ function togglePlayback() {
     return;
   }
 
-  audio
-      .play()
-      .then(() => {
-        isPlaying.value = true;
-      })
-      .catch(() => {
-        isPlaying.value = false;
-      });
+  audio.play().then(() => {
+    isPlaying.value = true;
+  }).catch(() => {
+    isPlaying.value = false;
+  });
 }
 
 function handleTimeUpdate(event) {
+  currentTime.value = event.target.currentTime;
   updateCurrentTime(event.target.currentTime);
+}
+
+function handleLoadedMetadata(event) {
+  duration.value = Number.isFinite(event.target.duration) ? event.target.duration : 0;
+}
+
+function handleSeek(event) {
+  const audio = audioRef.value;
+  if (!audio) {
+    return;
+  }
+
+  const nextTime = Number(event.target.value);
+  audio.currentTime = nextTime;
+  currentTime.value = nextTime;
+  updateCurrentTime(nextTime);
+}
+
+function skipBy(seconds) {
+  const audio = audioRef.value;
+  if (!audio) {
+    return;
+  }
+
+  const nextTime = Math.min(Math.max(audio.currentTime + seconds, 0), duration.value || audio.duration || 0);
+  audio.currentTime = nextTime;
+  currentTime.value = nextTime;
+  updateCurrentTime(nextTime);
+}
+
+function formatTime(totalSeconds) {
+  const safeSeconds = Number.isFinite(totalSeconds) ? Math.floor(totalSeconds) : 0;
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function selectBranch(branch) {
@@ -237,17 +370,7 @@ function handleSegmentEnd() {
 
   if (progress.value >= 100 && isLastSegment.value) {
     showThankYouScreen.value = true;
-    return;
   }
-
-  if (!currentSegment.value.autoplayNext || !currentSegment.value.nextSegmentId) return;
-
-  const nextId = currentSegment.value.nextSegmentId;
-  state.autoplayTransitioning = true;
-  setTimeout(() => {
-    moveToSegment(nextId);
-    state.autoplayTransitioning = false;
-  }, 600);
 }
 
 function resetWholeStory() {
@@ -258,6 +381,7 @@ function resetWholeStory() {
   }
 
   isPlaying.value = false;
+  currentTime.value = 0;
   segmentFinished.value = false;
   showThankYouScreen.value = false;
   resetProgress();
@@ -265,6 +389,15 @@ function resetWholeStory() {
 
 function goHome() {
   proxy.$router.push("/");
+}
+
+function goToNextChapter() {
+  if (!nextChapter.value) {
+    goHome();
+    return;
+  }
+
+  proxy.$router.push(`/chapter/${nextChapter.value.id}`);
 }
 </script>
 
@@ -274,7 +407,7 @@ function goHome() {
   display: grid;
   place-items: center;
   position: relative;
-  padding: 1.1rem;
+  padding: 0.75rem;
 }
 
 .player-shell {
@@ -286,8 +419,16 @@ function goHome() {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  padding: clamp(1rem, 1.3vw, 1.5rem);
+  padding: clamp(0.8rem, 1vw, 1.1rem);
   transition: opacity 320ms ease, transform 320ms ease;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
 }
 
 .player-shell.fade {
@@ -295,28 +436,24 @@ function goHome() {
   transform: scale(0.985);
 }
 
-/* === GRID: row1 = Bild + Right column; row2 = Head/Controls === */
 .player-layout {
   display: grid;
-  grid-template-columns: minmax(760px, 2.35fr) minmax(320px, 1fr);
-  grid-template-rows: auto auto;
-  gap: 1.2rem;
+  grid-template-columns: minmax(760px, 1fr);
+  grid-template-rows: auto auto auto auto;
+  gap: 0.8rem;
   align-items: start;
 }
 
-/* media-column "entpacken": Bild und Head direkt im parent-grid platzieren */
 .media-column {
   display: contents;
 }
 
-/* Bild: links oben */
 .image-placeholder {
   grid-column: 1;
-  grid-row: 1;
-
+  grid-row: 2;
   width: 100%;
-  min-height: 510px;
-  aspect-ratio: 16 / 8;
+  min-height: 360px;
+  aspect-ratio: 16 / 7;
   margin: 0;
   border-radius: 1rem;
   overflow: hidden;
@@ -331,18 +468,15 @@ function goHome() {
   object-fit: cover;
 }
 
-/* Head unter dem Bild */
 .media-head {
   grid-column: 1;
-  grid-row: 2;
-
+  grid-row: 4;
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   gap: 1rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.95rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.25rem;
 }
 
 .media-head__text {
@@ -350,53 +484,124 @@ function goHome() {
   min-width: 0;
 }
 
-/* Controls: inline-flex, waves links, alles mittig */
-.media-head__controls {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.8rem;
-  min-width: 0;
-  align-self: center;
-}
-
-.right-column {
-  grid-column: 2;
+.chapter-timeline {
+  grid-column: 1;
   grid-row: 1;
-
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  min-height: 0;
-}
-
-.decision-column {
   border-radius: 1rem;
-  padding: 0.95rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.8rem 0.95rem;
   background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.decision-column--active {
-  border: 1px solid transparent;
-  background:
-      linear-gradient(rgba(8, 10, 20, 0.86), rgba(8, 10, 20, 0.86)) padding-box,
-      linear-gradient(120deg, #2563eb, #ef4444, #2563eb) border-box;
-  background-size: 220% 220%;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 36px rgba(37, 99, 235, 0.28), 0 0 30px rgba(239, 68, 68, 0.22);
-  animation: decisionGlow 2.6s ease infinite;
+.chapter-timeline__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 0.55rem;
 }
 
-@keyframes decisionGlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.chapter-timeline__title {
+  margin: 0.15rem 0 0;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.chapter-timeline__summary {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
+}
+
+.chapter-timeline__track {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 0.5rem;
+}
+
+.chapter-timeline__step {
+  display: grid;
+}
+
+.chapter-timeline__dot {
+  width: 100%;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.chapter-timeline__step--done .chapter-timeline__dot {
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.95), rgba(239, 68, 68, 0.9));
+}
+
+.chapter-timeline__step--current .chapter-timeline__dot {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 0 18px rgba(96, 165, 250, 0.35);
+}
+
+.audio-controller {
+  grid-column: 1;
+  grid-row: 3;
+  border-radius: 1rem;
+  padding: 0.8rem 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 0.7rem;
+}
+
+.audio-controller__timeline {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.audio-controller__time {
+  font-size: 0.84rem;
+  color: rgba(255, 255, 255, 0.72);
+  min-width: 3rem;
+}
+
+.audio-controller__seek,
+.audio-controller__timeline input {
+  width: 100%;
+  accent-color: #60a5fa;
+}
+
+.audio-controller__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.audio-controller__transport {
+  border-radius: 999px;
+  width: 3.2rem;
+  height: 3.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.95rem;
+  display: inline-grid;
+  place-items: center;
+}
+
+.audio-controller__transport--primary {
+  width: 3.8rem;
+  height: 3.8rem;
+  font-size: 1.2rem;
+  background: linear-gradient(115deg, rgba(37, 99, 235, 0.28), rgba(239, 68, 68, 0.24));
+}
+
+.audio-controller__skip {
+  width: 1.55rem;
+  height: 1.55rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .back-btn,
@@ -427,10 +632,6 @@ function goHome() {
   justify-content: center;
 }
 
-.play-btn__icon {
-  font-size: 0.95rem;
-}
-
 .back-btn:hover,
 .play-btn:hover,
 .branch-btn:hover,
@@ -440,7 +641,14 @@ function goHome() {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
-/* Title/SubTitle kleiner + mehr Abstand zum Bild */
+.player-kicker {
+  margin: 0 0 0.35rem;
+  color: #9cc9ff;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  font-size: 0.82rem;
+}
+
 .player-title {
   margin: 0;
   font-size: clamp(1.55rem, 2.1vw, 2.35rem);
@@ -456,7 +664,6 @@ function goHome() {
   text-align: left;
 }
 
-/* Waves (links neben Button) */
 .audio-waves {
   height: 22px;
   display: flex;
@@ -472,33 +679,19 @@ function goHome() {
   animation: wave 1s ease-in-out infinite;
 }
 
-.audio-waves span:nth-child(2) {
-  animation-delay: 0.12s;
-}
-.audio-waves span:nth-child(3) {
-  animation-delay: 0.24s;
-}
-.audio-waves span:nth-child(4) {
-  animation-delay: 0.36s;
-}
-.audio-waves span:nth-child(5) {
-  animation-delay: 0.48s;
-}
+.audio-waves span:nth-child(2) { animation-delay: 0.12s; }
+.audio-waves span:nth-child(3) { animation-delay: 0.24s; }
+.audio-waves span:nth-child(4) { animation-delay: 0.36s; }
+.audio-waves span:nth-child(5) { animation-delay: 0.48s; }
 
 @keyframes wave {
-  0%,
-  100% {
-    height: 8px;
-    opacity: 0.6;
-  }
-  50% {
-    height: 22px;
-    opacity: 1;
-  }
+  0%, 100% { height: 8px; opacity: 0.6; }
+  50% { height: 22px; opacity: 1; }
 }
 
 .branch-title,
-.autoplay-info {
+.autoplay-info,
+.question-hint {
   margin: 0 0 0.7rem;
   font-size: 0.92rem;
   color: rgba(255, 255, 255, 0.9);
@@ -519,142 +712,89 @@ function goHome() {
   border-color: rgba(255, 255, 255, 0.75);
 }
 
-/* Meta dockt an Unterkante des Bildes */
-.meta-row {
+.thank-you-meta {
   margin-top: auto;
-  padding-top: 0;
-  display: grid;
-  gap: 0.45rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.88rem;
-  text-align: left;
-  justify-items: start;
-}
-
-.reset-btn {
-  border-color: rgba(248, 113, 113, 0.7);
-  background: linear-gradient(180deg, rgba(239, 68, 68, 0.45), rgba(127, 29, 29, 0.6));
-}
-
-.reset-btn:hover {
-  background: linear-gradient(180deg, rgba(248, 113, 113, 0.65), rgba(153, 27, 27, 0.75));
-}
-
-.mobile-blocker {
-  min-height: 52dvh;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  gap: 0.8rem;
-  padding: 1.2rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 80, 80, 0.45);
-  background: rgba(40, 0, 0, 0.22);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .thank-you-screen {
-  min-height: 52dvh;
   display: grid;
-  place-content: center;
-  text-align: center;
   gap: 1rem;
-  padding: 1.8rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(96, 165, 250, 0.35);
-  background:
-      linear-gradient(rgba(8, 10, 20, 0.88), rgba(8, 10, 20, 0.88)) padding-box,
-      linear-gradient(120deg, rgba(37, 99, 235, 0.8), rgba(239, 68, 68, 0.8), rgba(37, 99, 235, 0.8)) border-box;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 36px rgba(37, 99, 235, 0.2), 0 0 28px rgba(239, 68, 68, 0.16);
 }
 
-.thank-you-screen .player-title,
-.thank-you-screen .player-subtitle {
-  text-align: center;
-}
-
-.thank-you-meta {
+.decision-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
   display: grid;
-  gap: 0.45rem;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.95rem;
+  place-items: center;
+  padding: 1.5rem;
 }
 
-.thank-you-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.galaxyAccent {
+.decision-popup__backdrop {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(10px);
+}
+
+.decision-popup__card {
+  position: relative;
+  width: min(640px, 100%);
+  border-radius: 1.2rem;
+  padding: 1.1rem;
+  border: 1px solid transparent;
   background:
-      radial-gradient(
-          420px 300px at var(--mx) var(--my),
-          rgba(37, 99, 235, 0.2) 0%,
-          rgba(37, 99, 235, 0.08) 38%,
-          rgba(0, 0, 0, 0) 72%
-      ),
-      radial-gradient(
-          420px 300px at var(--mx2) var(--my2),
-          rgba(239, 68, 68, 0.2) 0%,
-          rgba(239, 68, 68, 0.08) 38%,
-          rgba(0, 0, 0, 0) 72%
-      );
-  filter: blur(10px);
-  mix-blend-mode: screen;
+    linear-gradient(rgba(8, 10, 20, 0.94), rgba(8, 10, 20, 0.94)) padding-box,
+    linear-gradient(120deg, #2563eb, #ef4444, #2563eb) border-box;
+  background-size: 220% 220%;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 0 36px rgba(37, 99, 235, 0.28), 0 0 30px rgba(239, 68, 68, 0.22);
+  animation: decisionGlow 2.6s ease infinite;
 }
 
-.cursorPulse {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.decision-popup__card--complete {
+  width: min(560px, 100%);
 }
 
-.cursorPulse::before,
-.cursorPulse::after {
-  content: "";
-  position: absolute;
-  width: 132px;
-  height: 132px;
-  border-radius: 999px;
-  transform: translate(-50%, -50%);
-  filter: blur(22px);
-  opacity: 0.56;
+.complete-actions {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
 }
 
-.cursorPulse::before {
-  left: var(--mx);
-  top: var(--my);
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.7) 0%, rgba(37, 99, 235, 0) 70%);
+.branch-btn--secondary {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.cursorPulse::after {
-  left: var(--mx2);
-  top: var(--my2);
-  background: radial-gradient(circle, rgba(239, 68, 68, 0.7) 0%, rgba(239, 68, 68, 0) 70%);
+.decision-inline-hint {
+  margin: 1rem 0 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.72);
 }
 
-/* Responsive: 1-spaltig */
-@media (max-width: 1200px) {
+@keyframes decisionGlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (max-width: 1100px) {
   .player-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
   }
 
-  .right-column {
-    grid-column: 1;
-    grid-row: 3;
-    align-self: auto;
+  .chapter-timeline__header,
+  .audio-controller__timeline {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
-  .meta-row {
-    margin-top: 0.9rem;
-  }
-
-  .image-placeholder {
-    min-height: 380px;
+  .top-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

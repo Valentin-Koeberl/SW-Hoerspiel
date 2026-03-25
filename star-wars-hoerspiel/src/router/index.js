@@ -1,21 +1,77 @@
-import { h, reactive } from "vue";
+import { computed, h, markRaw, reactive } from "vue";
 import StarWarsFanPage from "../components/StarWarsFanPage.vue";
 import Player from "../components/Player.vue";
+import StoryPage from "../components/StoryPage.vue";
 
-const routes = {
-  "/": StarWarsFanPage,
-  "/player": Player,
-};
+const RawStarWarsFanPage = markRaw(StarWarsFanPage);
+const RawPlayer = markRaw(Player);
+const RawStoryPage = markRaw(StoryPage);
+
+const routes = [
+  {
+    match(path) {
+      if (path !== "/") {
+        return null;
+      }
+
+      return {
+        component: RawStarWarsFanPage,
+        params: {},
+      };
+    },
+  },
+  {
+    match(path) {
+      if (path !== "/vorgeschichte") {
+        return null;
+      }
+
+      return {
+        component: RawStoryPage,
+        params: {},
+      };
+    },
+  },
+  {
+    match(path) {
+      const match = path.match(/^\/chapter\/([^/]+)$/);
+      if (!match) {
+        return null;
+      }
+
+      return {
+        component: RawPlayer,
+        params: {
+          bookId: decodeURIComponent(match[1]),
+        },
+      };
+    },
+  },
+];
 
 const baseUrl = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
 
 function normalizeToRoute(pathname) {
   if (baseUrl && pathname.startsWith(baseUrl)) {
     const rest = pathname.slice(baseUrl.length) || "/";
-    return rest.startsWith("/") ? rest : `/${rest}`;
+    pathname = rest.startsWith("/") ? rest : `/${rest}`;
   }
 
-  return pathname in routes ? pathname : "/";
+  for (const route of routes) {
+    const matched = route.match(pathname);
+    if (matched) {
+      return {
+        path: pathname,
+        ...matched,
+      };
+    }
+  }
+
+  return {
+    path: "/",
+    component: RawStarWarsFanPage,
+    params: {},
+  };
 }
 
 function toBrowserPath(routePath) {
@@ -27,27 +83,23 @@ function toBrowserPath(routePath) {
 }
 
 const state = reactive({
-  currentPath: normalizeToRoute(window.location.pathname),
+  currentRoute: normalizeToRoute(window.location.pathname),
 });
 
 function setPath(pathname) {
-  state.currentPath = normalizeToRoute(pathname);
+  state.currentRoute = normalizeToRoute(pathname);
 }
 
 window.addEventListener("popstate", () => setPath(window.location.pathname));
 
 export const router = {
   push(path) {
-    if (!(path in routes)) {
-      return;
-    }
-
     const browserPath = toBrowserPath(path);
     if (window.location.pathname !== browserPath) {
       window.history.pushState({}, "", browserPath);
     }
 
-    state.currentPath = path;
+    state.currentRoute = normalizeToRoute(path);
   },
 };
 
@@ -56,12 +108,16 @@ export function installSimpleRouter(app) {
   app.provide("simpleRouterState", state);
 }
 
+export function getCurrentRoute() {
+  return computed(() => state.currentRoute);
+}
+
 export const RouterView = {
   name: "RouterView",
   setup() {
     return () => {
-      const component = routes[state.currentPath] ?? routes["/"];
-      return h(component);
+      const fallbackComponent = state.currentRoute.component ?? RawStarWarsFanPage;
+      return h(fallbackComponent, { key: state.currentRoute.path });
     };
   },
 };
