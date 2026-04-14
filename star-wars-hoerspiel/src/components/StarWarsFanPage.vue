@@ -74,6 +74,52 @@
           </div>
         </section>
 
+        <section class="sourcesSection" aria-label="Quellenverzeichnis">
+          <div class="sourcesIntro">
+            <h2 class="sectionTitle sectionTitle--large">Quellenverzeichnis</h2>
+          </div>
+
+          <div class="sourcesList">
+            <ul>
+              <li>Sound Effect by <a href="https://pixabay.com/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=425453" target="_blank" rel="noopener noreferrer">DRAGON-STUDIO</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=425453" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=425458" target="_blank" rel="noopener noreferrer">DRAGON-STUDIO</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=425458" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/ahmed_abdulaal-49290858/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=312360" target="_blank" rel="noopener noreferrer">Ahmed Abdulaal</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=312360" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/soundreality-31074404/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=128280" target="_blank" rel="noopener noreferrer">Jurij</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=128280" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Music by <a href="https://pixabay.com/users/artarea_studio-40122321/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=183485" target="_blank" rel="noopener noreferrer">ArtArea_Studio</a> from <a href="https://pixabay.com/music//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=183485" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Music by <a href="https://pixabay.com/users/nastelbom-48128234/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=437187" target="_blank" rel="noopener noreferrer">Dmitrii Spis</a> from <a href="https://pixabay.com/music//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=437187" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=104656" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=104656" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/dragon-studio-38165424/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=405444" target="_blank" rel="noopener noreferrer">DRAGON-STUDIO</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=405444" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=60476" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=60476" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/fronbondi_skegs-23154649/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=285866" target="_blank" rel="noopener noreferrer">Gavin Mogensen</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=285866" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/bretbernhoft-30625489/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=422488" target="_blank" rel="noopener noreferrer">Bret Bernhoft</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=422488" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/8footdino_on_scratch-48867414/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=301729" target="_blank" rel="noopener noreferrer">8footdino_on_scratch</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=301729" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=72309" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=72309" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=81681" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=81681" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Music by <a href="https://pixabay.com/users/grand_project-19033897/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=407228" target="_blank" rel="noopener noreferrer">Grand_Project</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=407228" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Music by <a href="https://pixabay.com/users/grand_project-19033897/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=384194" target="_blank" rel="noopener noreferrer">Grand_Project</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=384194" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=29688" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=29688" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+
+              <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101682" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101682" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
+            </ul>
+          </div>
+        </section>
+
       </section>
     </main>
   </div>
@@ -658,5 +704,58 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   .libraryGrid {
     grid-template-columns: 1fr;
   }
+}
+
+.sourcesSection {
+  width: min(1120px, 100%);
+  display: grid;
+  gap: 1.4rem;
+  margin-top: 3rem;
+  padding: 2rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sourcesIntro {
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.sourcesList {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sourcesList ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sourcesList li {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 200ms ease, border-color 200ms ease;
+}
+
+.sourcesList li:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.sourcesList a {
+  color: #9cc9ff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 200ms ease;
+}
+
+.sourcesList a:hover {
+  color: #b8d9ff;
+  text-decoration: underline;
 }
 </style>
