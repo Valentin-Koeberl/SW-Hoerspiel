@@ -4,6 +4,14 @@
       <div class="stars stars--1"></div>
       <div class="stars stars--2"></div>
       <div class="stars stars--3"></div>
+
+      <!-- Planets -->
+      <div class="planet planet--1"></div>
+      <div class="planet planet--2"></div>
+      <div class="planet planet--3"></div>
+      <div class="planet planet--4"></div>
+      <div class="planet planet--5"></div>
+
       <div class="galaxyAccent"></div>
       <div class="cursorPulse" aria-hidden="true"></div>
     </div>
@@ -11,7 +19,6 @@
     <main class="container main" role="main">
       <section class="heroFull" aria-label="Hero">
         <header class="heroHeader" role="banner">
-          <p class="heroEyebrow">Interaktives Star Wars Hoerspiel</p>
           <h1 class="heroTitle">{{ project.title }}</h1>
           <p class="heroSubtitle">{{ project.subtitle }}</p>
           <p class="heroCopy">{{ project.description }}</p>
@@ -46,14 +53,12 @@
               </div>
 
               <div class="chapterCard__body">
-                <p class="chapterCard__tagline">{{ chapter.tagline }}</p>
                 <h3 class="chapterCard__title">{{ chapter.title }}</h3>
                 <p class="chapterCard__subtitle">{{ chapter.subtitle }}</p>
                 <p class="chapterCard__description">{{ chapter.description }}</p>
 
                 <div class="chapterCard__meta">
                   <span>{{ chapter.segments.length }} Sounds</span>
-                  <span>{{ chapter.id }}</span>
                 </div>
 
                 <button
@@ -80,12 +85,6 @@ import { chapters, project } from "../data/audioBooks";
 import { router } from "../router";
 
 const BASE = import.meta.env.BASE_URL;
-
-const images = {
-  cloneWars: `${BASE}audiobooks/Akt3/Pictutes/Klonarmee.webp`,
-  jediCouncil: `${BASE}/Rat_der_jedi.webp`,
-  separatists: `${BASE}/star_wars_separatist_logo_desktop_wallpaper_by_swmand4_d9hwtxc-fullview.jpg`,
-};
 
 function onMouseMove(e) {
   const x = e.clientX / window.innerWidth;
@@ -223,6 +222,230 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   0% { opacity: 0.2; transform: translateY(-8px) scale(2); }
   50% { opacity: 1; transform: translateY(8px) scale(2.5); }
   100% { opacity: 0.2; transform: translateY(-8px) scale(2); }
+}
+
+/* Planet animations */
+@keyframes orbitSlow {
+  0% { transform: translateX(-80px) translateY(-60px); }
+  100% { transform: translateX(80px) translateY(60px); }
+}
+
+@keyframes orbitMedium {
+  0% { transform: translateX(100px) translateY(-50px); }
+  100% { transform: translateX(-100px) translateY(80px); }
+}
+
+@keyframes orbitFast {
+  0% { transform: translateX(-90px) translateY(40px); }
+  100% { transform: translateX(70px) translateY(-70px); }
+}
+
+@keyframes orbitSlow2 {
+  0% { transform: translateX(60px) translateY(80px); }
+  100% { transform: translateX(-110px) translateY(-40px); }
+}
+
+@keyframes orbitMedium2 {
+  0% { transform: translateX(-70px) translateY(100px); }
+  100% { transform: translateX(90px) translateY(-80px); }
+}
+
+.planet {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+  opacity: 0.9;
+  z-index: 0;
+  box-shadow: inset -8px -8px 20px rgba(0, 0, 0, 0.6), inset 2px 2px 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Fallback gradient wenn kein Bild vorhanden */
+.planet--1 {
+  width: 50px;
+  height: 50px;
+  top: 20%;
+  left: 15%;
+  animation: orbitSlow 28s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 65% 35%, rgba(255, 220, 120, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 35% 65%, rgba(255, 150, 80, 0.3) 0%, transparent 50%),
+    conic-gradient(from 0deg at 30% 30%,
+      rgba(255, 200, 100, 1) 0deg,
+      rgba(255, 180, 80, 1) 45deg,
+      rgba(220, 140, 60, 1) 90deg,
+      rgba(200, 120, 50, 1) 135deg,
+      rgba(255, 200, 100, 1) 180deg,
+      rgba(255, 180, 80, 1) 225deg,
+      rgba(220, 140, 60, 1) 270deg,
+      rgba(200, 120, 50, 1) 315deg,
+      rgba(255, 200, 100, 1) 360deg
+    );
+}
+
+.planet--1::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 200, 0.2) 0%, transparent 30%),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.05) 4px
+    );
+  pointer-events: none;
+}
+
+.planet--2 {
+  width: 40px;
+  height: 40px;
+  top: 35%;
+  right: 18%;
+  animation: orbitMedium 32s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 60% 40%, rgba(150, 180, 255, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, rgba(100, 150, 220, 0.3) 0%, transparent 50%),
+    conic-gradient(from 45deg at 40% 40%,
+      rgba(100, 150, 255, 1) 0deg,
+      rgba(80, 130, 240, 1) 60deg,
+      rgba(60, 110, 220, 1) 120deg,
+      rgba(40, 80, 180, 1) 180deg,
+      rgba(60, 110, 220, 1) 240deg,
+      rgba(80, 130, 240, 1) 300deg,
+      rgba(100, 150, 255, 1) 360deg
+    );
+}
+
+.planet--2::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 40%, rgba(200, 220, 255, 0.25) 0%, transparent 35%),
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      transparent 0px,
+      transparent 3px,
+      rgba(0, 0, 0, 0.08) 3px,
+      rgba(0, 0, 0, 0.08) 6px
+    );
+  pointer-events: none;
+}
+
+.planet--3 {
+  width: 55px;
+  height: 55px;
+  bottom: 25%;
+  left: 12%;
+  animation: orbitFast 24s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 180, 180, 0.4) 0%, transparent 45%),
+    radial-gradient(circle at 30% 50%, rgba(200, 100, 100, 0.35) 0%, transparent 50%),
+    conic-gradient(from 90deg at 35% 35%,
+      rgba(255, 150, 150, 1) 0deg,
+      rgba(230, 100, 100, 1) 60deg,
+      rgba(200, 80, 80, 1) 120deg,
+      rgba(180, 60, 60, 1) 180deg,
+      rgba(200, 80, 80, 1) 240deg,
+      rgba(230, 100, 100, 1) 300deg,
+      rgba(255, 150, 150, 1) 360deg
+    );
+}
+
+.planet--3::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, rgba(255, 200, 200, 0.3) 0%, transparent 40%),
+    repeating-linear-gradient(
+      120deg,
+      transparent,
+      transparent 1.5px,
+      rgba(0, 0, 0, 0.06) 1.5px,
+      rgba(0, 0, 0, 0.06) 3px
+    );
+  pointer-events: none;
+}
+
+.planet--4 {
+  width: 45px;
+  height: 45px;
+  top: 55%;
+  right: 10%;
+  animation: orbitSlow2 30s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 55% 45%, rgba(220, 200, 120, 0.35) 0%, transparent 48%),
+    radial-gradient(circle at 35% 55%, rgba(180, 160, 80, 0.3) 0%, transparent 50%),
+    conic-gradient(from 180deg at 38% 38%,
+      rgba(200, 180, 100, 1) 0deg,
+      rgba(180, 160, 80, 1) 60deg,
+      rgba(160, 140, 60, 1) 120deg,
+      rgba(140, 120, 40, 1) 180deg,
+      rgba(160, 140, 60, 1) 240deg,
+      rgba(180, 160, 80, 1) 300deg,
+      rgba(200, 180, 100, 1) 360deg
+    );
+}
+
+.planet--4::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 38%, rgba(240, 220, 150, 0.25) 0%, transparent 38%),
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      transparent 0deg,
+      transparent 20deg,
+      rgba(0, 0, 0, 0.04) 20deg,
+      rgba(0, 0, 0, 0.04) 40deg
+    );
+  pointer-events: none;
+}
+
+.planet--5 {
+  width: 48px;
+  height: 48px;
+  bottom: 20%;
+  right: 20%;
+  animation: orbitMedium2 26s ease-in-out infinite;
+  background:
+    radial-gradient(circle at 60% 40%, rgba(180, 220, 180, 0.35) 0%, transparent 48%),
+    radial-gradient(circle at 40% 60%, rgba(130, 180, 130, 0.3) 0%, transparent 50%),
+    conic-gradient(from 270deg at 42% 42%,
+      rgba(150, 200, 150, 1) 0deg,
+      rgba(120, 170, 120, 1) 60deg,
+      rgba(100, 150, 100, 1) 120deg,
+      rgba(80, 130, 80, 1) 180deg,
+      rgba(100, 150, 100, 1) 240deg,
+      rgba(120, 170, 120, 1) 300deg,
+      rgba(150, 200, 150, 1) 360deg
+    );
+}
+
+.planet--5::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 42%, rgba(200, 240, 200, 0.25) 0%, transparent 38%),
+    repeating-linear-gradient(
+      75deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.05) 2px,
+      rgba(255, 255, 255, 0.05) 4px
+    );
+  pointer-events: none;
 }
 
 .stack {
