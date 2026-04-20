@@ -16,7 +16,7 @@ const chapterDefinitions = [
     subtitle: "Der Einsatz beginnt",
     tagline: "Kapitel 1",
     description: "Das Intro setzt die Ausgangslage für Trupp 705 und führt in den Einsatz ein.",
-    coverImage: `${BASE}audiobooks/Intro/Pictures/Cover 1.png`,
+    coverImage: `${BASE}audiobooks/Intro/Pictures/Cover Art Intro.png`,
     status: "Verfügbar",
     segments: [
       scene({
@@ -42,7 +42,7 @@ const chapterDefinitions = [
     tagline: "Kapitel 2",
     description:
       "Du hörst eine Szene, beantwortest am Ende eine Frage und bestimmst damit, welche nächste Audio-Lane abgespielt wird.",
-    coverImage: `${BASE}audiobooks/Akt1/Pictures/Cover 2.png`,
+    coverImage: `${BASE}audiobooks/Akt1/Pictures/Cover Art Akt 1.png`,
     status: "Verfügbar",
     segments: [
       scene({
@@ -136,7 +136,7 @@ const chapterDefinitions = [
     subtitle: "Fortsetzung in Vorbereitung",
     tagline: "Kapitel 3",
     description: "Die Ordnerstruktur für Akt 2 ist vorbereitet. Sobald Sounds vorhanden sind, kann das Kapitel direkt freigeschaltet werden.",
-    coverImage: `${BASE}audiobooks/Akt2/Pictures/Cover3.png`,
+    coverImage: `${BASE}audiobooks/Akt2/Pictures/Cover Art Akt 2.png`,
     status: "Bald verfügbar",
     segments: [
       scene({
@@ -230,7 +230,7 @@ const chapterDefinitions = [
     subtitle: "Finale in Vorbereitung",
     tagline: "Kapitel 4",
     description: "Auch Akt 3 ist als eigenes Kapitel vorgesehen und kann später mit weiteren Audio-Lanes gefüllt werden.",
-    coverImage: `${BASE}audiobooks/Akt3/Pictutes/Klonarmee.webp`,
+    coverImage: `${BASE}audiobooks/Akt3/Pictutes/Cover Art Akt 3.png`,
     status: "Bald verfügbar",
     segments: [],
   },
@@ -240,7 +240,7 @@ const chapterDefinitions = [
     subtitle: "Erik kann nicht mehr",
     tagline: "Kapitel 4",
     description: "Auch Akt 3 ist als eigenes Kapitel vorgesehen und kann später mit weiteren Audio-Lanes gefüllt werden.",
-    coverImage: `${BASE}audiobooks/Akt3/Pictutes/Klonarmee.webp`,
+    coverImage: `${BASE}audiobooks/Akt4/Pictures/Cover Art Akt 4.png`,
     status: "Bald verfügbar",
     segments: [],
   },
