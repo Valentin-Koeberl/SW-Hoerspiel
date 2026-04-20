@@ -45,28 +45,17 @@
               v-for="chapter in chapterCards"
               :key="chapter.id"
               class="coverCard"
-              :class="{ 'coverCard--locked': !chapter.isUnlocked }"
               role="listitem"
             >
               <button
                 class="coverCard__button"
                 type="button"
-                :disabled="!chapter.isUnlocked"
+                :disabled="!chapter.isPlayable"
                 :aria-label="`Kapitel öffnen: ${chapter.title}`"
                 @click="openChapter(chapter.id)"
               >
                 <img :src="chapter.coverImage" :alt="chapter.title" loading="lazy" />
                 <div class="coverCard__overlay"></div>
-                <div v-if="!chapter.isUnlocked" class="coverCard__lockedOverlay" aria-hidden="true">
-                  <span class="coverCard__lock">
-                    <svg viewBox="0 0 24 24" role="presentation">
-                      <path d="M7 10V7a5 5 0 1 1 10 0v3" />
-                      <rect x="5" y="10" width="14" height="10" rx="2" ry="2" />
-                      <circle cx="12" cy="15" r="1.7" />
-                    </svg>
-                  </span>
-                  <span class="coverCard__lockedText">Gesperrt</span>
-                </div>
                 <h3 class="coverCard__title">{{ chapter.title }}</h3>
               </button>
             </article>
@@ -602,54 +591,8 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 42%, rgba(0, 0, 0, 0.7) 100%);
 }
 
-.coverCard--locked img {
-  filter: brightness(0.55) saturate(0.8);
-}
-
-.coverCard__lockedOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(1px);
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.6rem;
-}
-
-.coverCard__lock {
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.68);
-  background: rgba(0, 0, 0, 0.72);
-  display: grid;
-  place-items: center;
-  color: #fff;
-}
-
-.coverCard__lock svg {
-  width: 1.1rem;
-  height: 1.1rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.coverCard__lockedText {
-  color: #fff;
-  font-size: 0.82rem;
-  letter-spacing: 0.1rem;
-  text-transform: uppercase;
-  font-weight: 800;
-}
-
 .coverCard__title {
   position: absolute;
-  z-index: 3;
   left: 0;
   right: 0;
   bottom: 1rem;
@@ -738,7 +681,7 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
 }
 
 .sourcesList li {
-  padding: 1.05rem 1.2rem;
+  padding: 0.95rem 1rem;
   border-radius: 0.7rem;
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid rgba(255, 255, 255, 0.11);
