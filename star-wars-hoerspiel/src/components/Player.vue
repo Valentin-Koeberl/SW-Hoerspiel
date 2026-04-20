@@ -16,7 +16,14 @@
         </button>
       </div>
 
-      <section v-if="!currentBook.isPlayable" class="thank-you-screen" aria-live="polite">
+      <section v-if="!isChapterUnlocked" class="thank-you-screen" aria-live="polite">
+        <h1 class="player-title">Kapitel gesperrt</h1>
+        <p class="player-subtitle">
+          Schließe zuerst das vorherige Kapitel ab, um {{ currentBook.title }} freizuschalten.
+        </p>
+      </section>
+
+      <section v-else-if="!currentBook.isPlayable" class="thank-you-screen" aria-live="polite">
         <h1 class="player-title">{{ currentBook.title }}</h1>
         <p class="player-subtitle">
           Für dieses Kapitel sind aktuell noch keine Audios hinterlegt. Sobald Sounds im Ordner liegen, kann das Kapitel
@@ -137,9 +144,9 @@
       >
         <div class="decision-popup__backdrop"></div>
         <section class="decision-popup__card decision-popup__card--complete">
-          <h2 id="chapter-complete-title" class="branch-title">Kapitel abgeschlossen</h2>
+          <h2 id="chapter-complete-title" class="branch-title">{{ completionTitle }}</h2>
           <p class="question-hint">
-            Du hast {{ currentBook.title }} abgeschlossen. {{ nextChapter ? `Als Nächstes wartet ${nextChapter.title}.` : "Weitere Kapitel folgen später." }}
+            {{ completionMessage }}
           </p>
           <div class="complete-actions">
             <button v-if="nextChapter" class="branch-btn" type="button" @click="goToNextChapter">
@@ -175,7 +182,7 @@ const { proxy } = getCurrentInstance();
 const route = getCurrentRoute();
 const chapterId = route.value.params?.bookId ?? defaultChapterId;
 
-const { session, currentBook, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress } =
+const { session, currentBook, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress, completeChapter, chapterAccess, isChapterFullyExplored } =
   usePlayerStore(chapterId);
 
 const limitedBranches = computed(() => (currentSegment.value?.branches ?? []).slice(0, 3));
@@ -210,14 +217,30 @@ const completedSteps = computed(() => {
 const totalStepCount = computed(() => currentBook.value.timelineSteps.length || 1);
 const completedStepCount = computed(() => completedSteps.value.length);
 const nextChapter = computed(() => {
-  const playableChapters = chapters.filter((chapter) => chapter.isPlayable);
-  const currentIndex = playableChapters.findIndex((chapter) => chapter.id === currentBook.value.id);
+  const currentIndex = chapters.findIndex((chapter) => chapter.id === currentBook.value.id);
 
   if (currentIndex === -1) {
     return null;
   }
 
-  return playableChapters[currentIndex + 1] ?? null;
+  return chapters[currentIndex + 1] ?? null;
+});
+const isChapterUnlocked = computed(() => Boolean(chapterAccess.value[currentBook.value.id]?.unlocked));
+const completionTitle = computed(() => {
+  if (!nextChapter.value && isChapterFullyExplored(currentBook.value.id)) {
+    return "Finale komplett abgeschlossen";
+  }
+
+  return "Kapitel abgeschlossen";
+});
+const completionMessage = computed(() => {
+  if (!nextChapter.value && isChapterFullyExplored(currentBook.value.id)) {
+    return `Du hast ${currentBook.value.title} vollständig mit allen Pfaden abgeschlossen. Danke fürs Durchspielen von Trupp 705!`;
+  }
+
+  return `Du hast ${currentBook.value.title} abgeschlossen. ${
+    nextChapter.value ? `Als Nächstes wartet ${nextChapter.value.title}.` : "Weitere Kapitel folgen später."
+  }`;
 });
 const progress = computed(() => {
   const percent = Math.floor((completedStepCount.value / totalStepCount.value) * 100);
@@ -297,7 +320,7 @@ watch(isSmallScreen, (small) => {
 });
 
 function togglePlayback() {
-  if (isSmallScreen.value || showThankYouScreen.value || !currentSegment.value) {
+  if (!isChapterUnlocked.value || isSmallScreen.value || showThankYouScreen.value || !currentSegment.value) {
     return;
   }
 
@@ -369,6 +392,7 @@ function handleSegmentEnd() {
   segmentFinished.value = true;
 
   if (progress.value >= 100 && isLastSegment.value) {
+    completeChapter(currentBook.value.id);
     showThankYouScreen.value = true;
   }
 }
