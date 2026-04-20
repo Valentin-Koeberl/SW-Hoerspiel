@@ -42,7 +42,7 @@
 
           <div class="libraryCarousel" role="list" aria-label="Kapitel-Cover-Karussell">
             <article
-              v-for="chapter in chapters"
+              v-for="chapter in chapterCards"
               :key="chapter.id"
               class="coverCard"
               role="listitem"
@@ -115,11 +115,23 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted } from "vue";
 import { chapters, project } from "../data/audioBooks";
+import { usePlayerStore } from "../composables/usePlayerStore";
 import { router } from "../router";
 
 const BASE = import.meta.env.BASE_URL;
+const { chapterAccess } = usePlayerStore();
+const chapterCards = computed(() =>
+  chapters.map((chapter) => {
+    const access = chapterAccess.value[chapter.id] ?? { unlocked: false, completed: false };
+    return {
+      ...chapter,
+      isUnlocked: access.unlocked,
+      isCompleted: access.completed,
+    };
+  }),
+);
 
 function onMouseMove(e) {
   const x = e.clientX / window.innerWidth;
@@ -656,6 +668,7 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
 .sourcesList {
   max-width: 960px;
   margin: 0 auto;
+  padding: 0 0.4rem;
 }
 
 .sourcesList ul {
@@ -673,6 +686,7 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   background: rgba(255, 255, 255, 0.045);
   border: 1px solid rgba(255, 255, 255, 0.11);
   transition: background 200ms ease, border-color 200ms ease;
+  line-height: 1.5;
 }
 
 .sourcesList li:hover {
