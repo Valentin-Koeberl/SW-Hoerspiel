@@ -1,5 +1,5 @@
 import { computed, reactive, watch } from "vue";
-import { chapterMap, defaultChapterId } from "../data/audioBooks";
+import { chapterMap, chapters, defaultChapterId } from "../data/audioBooks";
 
 const STORAGE_KEY = "sw-hoerspiel-player-state";
 
@@ -19,6 +19,16 @@ function createSession(chapterId) {
 const defaultState = {
   activeBookId: defaultChapterId,
   sessions: Object.fromEntries(Object.keys(chapterMap).map((chapterId) => [chapterId, createSession(chapterId)])),
+  chapterProgress: Object.fromEntries(
+    chapters.map((chapter, index) => [
+      chapter.id,
+      {
+        unlocked: index === 0,
+        completed: false,
+        exploredSegments: [],
+      },
+    ]),
+  ),
 };
 
 function normalizeSession(chapterId, session) {
@@ -60,6 +70,22 @@ function loadSavedState() {
       sessions: Object.fromEntries(
         Object.keys(chapterMap).map((chapterId) => [chapterId, normalizeSession(chapterId, parsed.sessions?.[chapterId])]),
       ),
+      chapterProgress: Object.fromEntries(
+        chapters.map((chapter, index) => {
+          const saved = parsed.chapterProgress?.[chapter.id];
+
+          return [
+            chapter.id,
+            {
+              unlocked: Boolean(saved?.unlocked) || index === 0,
+              completed: Boolean(saved?.completed),
+              exploredSegments: Array.isArray(saved?.exploredSegments)
+                ? saved.exploredSegments.filter((segmentId) => segmentId in chapter.segmentMap)
+                : [],
+            },
+          ];
+        }),
+      ),
     };
   } catch {
     return null;
@@ -68,10 +94,31 @@ function loadSavedState() {
 
 const state = reactive(loadSavedState() ?? defaultState);
 
+function recalculateUnlocks() {
+  chapters.forEach((chapter, index) => {
+    const progress = state.chapterProgress[chapter.id];
+    if (!progress) {
+      return;
+    }
+
+    if (index === 0) {
+      progress.unlocked = true;
+      return;
+    }
+
+    const previousChapter = chapters[index - 1];
+    const previousProgress = state.chapterProgress[previousChapter.id];
+    progress.unlocked = Boolean(previousProgress?.completed);
+  });
+}
+
+recalculateUnlocks();
+
 watch(
   () => ({
     activeBookId: state.activeBookId,
     sessions: state.sessions,
+    chapterProgress: state.chapterProgress,
   }),
   (snapshot) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
@@ -87,6 +134,27 @@ function ensureSession(chapterId) {
   return state.sessions[chapterId];
 }
 
+function ensureChapterProgress(chapterId) {
+  if (!state.chapterProgress[chapterId]) {
+    state.chapterProgress[chapterId] = {
+      unlocked: chapterId === chapters[0]?.id,
+      completed: false,
+      exploredSegments: [],
+    };
+  }
+
+  return state.chapterProgress[chapterId];
+}
+
+function addExploredSegment(chapterId, segmentId) {
+  const progress = ensureChapterProgress(chapterId);
+  if (!segmentId || progress.exploredSegments.includes(segmentId)) {
+    return;
+  }
+
+  progress.exploredSegments.push(segmentId);
+}
+
 function setActiveBook(chapterId) {
   if (!(chapterId in chapterMap)) {
     state.activeBookId = defaultChapterId;
@@ -94,7 +162,8 @@ function setActiveBook(chapterId) {
   }
 
   state.activeBookId = chapterId;
-  ensureSession(chapterId);
+  const session = ensureSession(chapterId);
+  addExploredSegment(chapterId, session.currentSegmentId);
 }
 
 function moveToSegment(segmentId) {
@@ -111,6 +180,8 @@ function moveToSegment(segmentId) {
   if (!session.visitedSegments.includes(segmentId)) {
     session.visitedSegments.push(segmentId);
   }
+
+  addExploredSegment(state.activeBookId, segmentId);
 }
 
 function chooseBranch(branch) {
@@ -133,6 +204,31 @@ function updateCurrentTime(timeInSeconds) {
 
 function resetProgress() {
   state.sessions[state.activeBookId] = createSession(state.activeBookId);
+  const initialSegmentId = state.sessions[state.activeBookId].currentSegmentId;
+  if (initialSegmentId) {
+    addExploredSegment(state.activeBookId, initialSegmentId);
+  }
+}
+
+function isChapterFullyExplored(chapterId) {
+  const chapter = chapterMap[chapterId];
+  if (!chapter) {
+    return false;
+  }
+
+  const progress = ensureChapterProgress(chapterId);
+  const totalSegments = Object.keys(chapter.segmentMap).length;
+  if (!totalSegments) {
+    return true;
+  }
+
+  return progress.exploredSegments.length >= totalSegments;
+}
+
+function completeChapter(chapterId = state.activeBookId) {
+  const progress = ensureChapterProgress(chapterId);
+  progress.completed = true;
+  recalculateUnlocks();
 }
 
 export function usePlayerStore(chapterId = defaultChapterId) {
@@ -140,6 +236,18 @@ export function usePlayerStore(chapterId = defaultChapterId) {
 
   const currentBook = computed(() => chapterMap[state.activeBookId] ?? chapterMap[defaultChapterId]);
   const session = computed(() => ensureSession(state.activeBookId));
+  const currentChapterProgress = computed(() => ensureChapterProgress(state.activeBookId));
+  const chapterAccess = computed(() =>
+    Object.fromEntries(
+      chapters.map((chapter) => [
+        chapter.id,
+        {
+          ...ensureChapterProgress(chapter.id),
+          fullyExplored: isChapterFullyExplored(chapter.id),
+        },
+      ]),
+    ),
+  );
   const currentSegment = computed(() => currentBook.value.segmentMap[session.value.currentSegmentId]);
   const progress = computed(() => {
     const totalSegments = Object.keys(currentBook.value.segmentMap).length || 1;
@@ -157,5 +265,9 @@ export function usePlayerStore(chapterId = defaultChapterId) {
     moveToSegment,
     updateCurrentTime,
     resetProgress,
+    completeChapter,
+    chapterAccess,
+    currentChapterProgress,
+    isChapterFullyExplored,
   };
 }

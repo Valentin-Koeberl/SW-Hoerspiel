@@ -35,48 +35,48 @@
           <div class="libraryIntro">
             <h2 class="sectionTitle sectionTitle--large">Kapitelübersicht</h2>
             <p class="libraryCopy">
-              Jedes Kapitel kann mehrere Audio-Lanes enthalten. Nach jeder Lane kann eine Frage erscheinen, deren
-              Antwort über Buttons die nächste Audio bestimmt.
+              Die fünf Cover zeigen Intro und die Akte 1 bis 4. Wähle ein Cover im Karussell, um direkt zum Kapitel zu
+              springen.
             </p>
           </div>
 
-          <div class="libraryGrid">
+          <div class="libraryCarousel" role="list" aria-label="Kapitel-Cover-Karussell">
             <article
-              v-for="chapter in chapters"
+              v-for="chapter in chapterCards"
               :key="chapter.id"
-              class="chapterCard"
-              :class="{ 'chapterCard--locked': !chapter.isPlayable }"
+              class="coverCard"
+              :class="{ 'coverCard--locked': !chapter.isUnlocked }"
+              role="listitem"
             >
-              <div class="chapterCard__media">
+              <button
+                class="coverCard__button"
+                type="button"
+                :disabled="!chapter.isUnlocked"
+                :aria-label="`Kapitel öffnen: ${chapter.title}`"
+                @click="openChapter(chapter.id)"
+              >
                 <img :src="chapter.coverImage" :alt="chapter.title" loading="lazy" />
-                <span class="chapterCard__status">{{ chapter.status }}</span>
-              </div>
-
-              <div class="chapterCard__body">
-                <h3 class="chapterCard__title">{{ chapter.title }}</h3>
-                <p class="chapterCard__subtitle">{{ chapter.subtitle }}</p>
-                <p class="chapterCard__description">{{ chapter.description }}</p>
-
-                <div class="chapterCard__meta">
-                  <span>{{ chapter.segments.length }} Sounds</span>
+                <div class="coverCard__overlay"></div>
+                <div v-if="!chapter.isUnlocked" class="coverCard__lockedOverlay" aria-hidden="true">
+                  <span class="coverCard__lock">
+                    <svg viewBox="0 0 24 24" role="presentation">
+                      <path d="M7 10V7a5 5 0 1 1 10 0v3" />
+                      <rect x="5" y="10" width="14" height="10" rx="2" ry="2" />
+                      <circle cx="12" cy="15" r="1.7" />
+                    </svg>
+                  </span>
+                  <span class="coverCard__lockedText">Gesperrt</span>
                 </div>
-
-                <button
-                  class="chapterCard__button"
-                  type="button"
-                  :disabled="!chapter.isPlayable"
-                  @click="openChapter(chapter.id)"
-                >
-                  {{ chapter.isPlayable ? "Kapitel öffnen" : "Noch keine Audios" }}
-                </button>
-              </div>
+                <h3 class="coverCard__title">{{ chapter.title }}</h3>
+              </button>
             </article>
           </div>
         </section>
 
-        <section class="sourcesSection" aria-label="Quellenverzeichnis">
+        <footer class="sourcesSection" aria-label="Quellenverzeichnis">
           <div class="sourcesIntro">
             <h2 class="sectionTitle sectionTitle--large">Quellenverzeichnis</h2>
+            <p class="sourcesCopy">Alle verwendeten Audio-Ressourcen mit direkter Verlinkung.</p>
           </div>
 
           <div class="sourcesList">
@@ -118,7 +118,7 @@
               <li>Sound Effect by <a href="https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101682" target="_blank" rel="noopener noreferrer">freesound_community</a> from <a href="https://pixabay.com/sound-effects//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=101682" target="_blank" rel="noopener noreferrer">Pixabay</a></li>
             </ul>
           </div>
-        </section>
+        </footer>
 
       </section>
     </main>
@@ -126,11 +126,23 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted } from "vue";
 import { chapters, project } from "../data/audioBooks";
+import { usePlayerStore } from "../composables/usePlayerStore";
 import { router } from "../router";
 
 const BASE = import.meta.env.BASE_URL;
+const { chapterAccess } = usePlayerStore();
+const chapterCards = computed(() =>
+  chapters.map((chapter) => {
+    const access = chapterAccess.value[chapter.id] ?? { unlocked: false, completed: false };
+    return {
+      ...chapter,
+      isUnlocked: access.unlocked,
+      isCompleted: access.completed,
+    };
+  }),
+);
 
 function onMouseMove(e) {
   const x = e.clientX / window.innerWidth;
@@ -539,124 +551,115 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   line-height: 1.75;
 }
 
-.libraryGrid {
+.libraryCarousel {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 280px);
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.6rem 0.2rem 1.2rem;
+  scroll-snap-type: x mandatory;
 }
 
-.chapterCard {
+.coverCard {
+  scroll-snap-align: center;
+}
+
+.coverCard__button {
   position: relative;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1.2rem;
   overflow: hidden;
-  border-radius: 1.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)), rgba(5, 8, 18, 0.78);
-  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.28);
+  aspect-ratio: 2 / 3;
+  padding: 0;
+  background: rgba(8, 12, 28, 0.8);
+  cursor: pointer;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
-.chapterCard--locked {
-  opacity: 0.78;
-}
-
-.chapterCard__media {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-}
-
-.chapterCard__media img {
+.coverCard__button img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.chapterCard__media::after {
-  content: "";
+.coverCard__button:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+.coverCard__button:disabled {
+  cursor: not-allowed;
+}
+
+.coverCard__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.5));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 42%, rgba(0, 0, 0, 0.7) 100%);
 }
 
-.chapterCard__status {
+.coverCard--locked img {
+  filter: brightness(0.55) saturate(0.8);
+}
+
+.coverCard__lockedOverlay {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1;
-  padding: 0.45rem 0.8rem;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(1px);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.6rem;
+}
+
+.coverCard__lock {
+  width: 2.6rem;
+  height: 2.6rem;
   border-radius: 999px;
-  background: rgba(11, 16, 33, 0.76);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 0.78rem;
-  letter-spacing: 0.08rem;
-  text-transform: uppercase;
-}
-
-.chapterCard__body {
-  padding: 1.2rem 1.2rem 1.35rem;
-}
-
-.chapterCard__tagline {
-  margin: 0 0 0.55rem;
-  color: #9cc9ff;
-  text-transform: uppercase;
-  letter-spacing: 0.08rem;
-  font-size: 0.82rem;
-}
-
-.chapterCard__title {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.chapterCard__subtitle {
-  margin: 0.45rem 0 0;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.chapterCard__description {
-  margin: 1rem 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.7;
-}
-
-.chapterCard__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  color: rgba(255, 255, 255, 0.58);
-  font-size: 0.82rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06rem;
-}
-
-.chapterCard__button {
-  margin-top: 1.15rem;
-  width: 100%;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.52);
-  background: linear-gradient(115deg, rgba(37, 99, 235, 0.28), rgba(239, 68, 68, 0.24));
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
   color: #fff;
-  padding: 0.9rem 1rem;
+}
+
+.coverCard__lock svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.coverCard__lockedText {
+  color: #fff;
+  font-size: 0.82rem;
+  letter-spacing: 0.1rem;
   text-transform: uppercase;
-  letter-spacing: 0.08rem;
   font-weight: 800;
-  transition: transform 140ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
-.chapterCard__button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.34);
-  filter: brightness(1.06);
-}
-
-.chapterCard__button:disabled {
-  opacity: 0.58;
-  filter: grayscale(0.2);
-  transform: none;
-  box-shadow: none;
-  cursor: not-allowed;
+.coverCard__title {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 1rem;
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
+  font-size: 1.08rem;
+  color: #fff;
+  text-shadow: 0 8px 20px rgba(0, 0, 0, 0.9);
 }
 
 .galaxyAccent {
@@ -700,12 +703,6 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   background: radial-gradient(circle, rgba(239, 68, 68, 0.66) 0%, rgba(239, 68, 68, 0) 70%);
 }
 
-@media (max-width: 860px) {
-  .libraryGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .sourcesSection {
   width: min(1120px, 100%);
   display: grid;
@@ -720,26 +717,33 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
   padding: 0 1rem;
 }
 
+.sourcesCopy {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.68);
+}
+
 .sourcesList {
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
+  padding: 0 0.4rem;
 }
 
 .sourcesList ul {
-  list-style: none;
-  padding: 0;
+  list-style: decimal-leading-zero;
+  padding: 0 0 0 1.5rem;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
 }
 
 .sourcesList li {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1.05rem 1.2rem;
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   transition: background 200ms ease, border-color 200ms ease;
+  line-height: 1.5;
 }
 
 .sourcesList li:hover {
@@ -757,5 +761,11 @@ onBeforeUnmount(() => window.removeEventListener("mousemove", onMouseMove));
 .sourcesList a:hover {
   color: #b8d9ff;
   text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+  .sourcesList ul {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
