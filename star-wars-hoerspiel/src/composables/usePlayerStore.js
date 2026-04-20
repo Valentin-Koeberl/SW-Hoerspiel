@@ -94,6 +94,26 @@ function loadSavedState() {
 
 const state = reactive(loadSavedState() ?? defaultState);
 
+function recalculateUnlocks() {
+  chapters.forEach((chapter, index) => {
+    const progress = state.chapterProgress[chapter.id];
+    if (!progress) {
+      return;
+    }
+
+    if (index === 0) {
+      progress.unlocked = true;
+      return;
+    }
+
+    const previousChapter = chapters[index - 1];
+    const previousProgress = state.chapterProgress[previousChapter.id];
+    progress.unlocked = Boolean(previousProgress?.completed);
+  });
+}
+
+recalculateUnlocks();
+
 watch(
   () => ({
     activeBookId: state.activeBookId,
@@ -208,13 +228,7 @@ function isChapterFullyExplored(chapterId) {
 function completeChapter(chapterId = state.activeBookId) {
   const progress = ensureChapterProgress(chapterId);
   progress.completed = true;
-  progress.unlocked = true;
-
-  const chapterIndex = chapters.findIndex((chapter) => chapter.id === chapterId);
-  const nextChapter = chapters[chapterIndex + 1];
-  if (nextChapter) {
-    ensureChapterProgress(nextChapter.id).unlocked = true;
-  }
+  recalculateUnlocks();
 }
 
 export function usePlayerStore(chapterId = defaultChapterId) {
