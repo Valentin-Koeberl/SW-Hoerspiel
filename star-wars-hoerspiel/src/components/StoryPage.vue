@@ -90,7 +90,7 @@ import { router } from "../router";
 const BASE = import.meta.env.BASE_URL;
 
 const images = {
-  cloneWars: `${BASE}audiobooks/Akt3/Pictutes/Klonarmee.webp`,
+  cloneWars: `${BASE}audiobooks/Akt3/Pictures/Klonarmee.webp`,
   jediCouncil: `${BASE}/Rat_der_jedi.webp`,
   separatists: `${BASE}/star_wars_separatist_logo_desktop_wallpaper_by_swmand4_d9hwtxc-fullview.jpg`,
 };

@@ -29,6 +29,9 @@
           Für dieses Kapitel sind aktuell noch keine Audios hinterlegt. Sobald Sounds im Ordner liegen, kann das Kapitel
           direkt in der Datenstruktur freigeschaltet werden.
         </p>
+        <p v-if="currentBook.id === 'akt4' && session.storyline" class="player-subtitle">
+          Akt 4 merkt sich aktuell Storyline {{ session.storyline }} und würde beim Start den passenden Einstieg wählen.
+        </p>
       </section>
 
       <section v-else-if="isSmallScreen" class="mobile-blocker" aria-live="polite">
@@ -72,7 +75,7 @@
             <span v-else>Kein Bild für dieses Segment</span>
           </div>
 
-          <section class="audio-controller" aria-label="Audio Controller">
+          <section v-if="hasAudio" class="audio-controller" aria-label="Audio Controller">
             <div class="audio-controller__timeline">
               <span class="audio-controller__time">{{ formatTime(currentTime) }}</span>
               <input
@@ -106,7 +109,17 @@
             </div>
           </section>
 
+          <section v-else-if="isTextEnding" class="ending-card" aria-live="polite">
+            <h2 class="branch-title">{{ endingTitle }}</h2>
+            <p class="question-hint">{{ endingText }}</p>
+            <p v-if="endingRecapItems.length" class="question-hint">Rueckblick auf deine letzten Entscheidungen:</p>
+            <ul v-if="endingRecapItems.length" class="ending-recap">
+              <li v-for="item in endingRecapItems" :key="item">{{ item }}</li>
+            </ul>
+          </section>
+
           <audio
+            v-if="hasAudio"
             ref="audioRef"
             :src="currentSegment.audioUrl"
             @timeupdate="handleTimeUpdate"
@@ -182,11 +195,13 @@ const { proxy } = getCurrentInstance();
 const route = getCurrentRoute();
 const chapterId = route.value.params?.bookId ?? defaultChapterId;
 
-const { session, currentBook, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress, completeChapter, chapterAccess, isChapterFullyExplored } =
+const { state, session, currentBook, currentSegment, chooseBranch, moveToSegment, updateCurrentTime, resetProgress, completeChapter, chapterAccess, isChapterFullyExplored } =
   usePlayerStore(chapterId);
 
 const limitedBranches = computed(() => (currentSegment.value?.branches ?? []).slice(0, 3));
 const showBranches = computed(() => segmentFinished.value && limitedBranches.value.length > 0);
+const hasAudio = computed(() => Boolean(currentSegment.value?.audioUrl));
+const isTextEnding = computed(() => Boolean(currentSegment.value?.isTextEnding));
 const currentSceneImage = computed(() => {
   const segment = currentSegment.value;
   if (!segment) {
@@ -258,6 +273,42 @@ const isLastSegment = computed(() => {
 
   return !hasBranches && !hasNextSegment && !hasAutoplayNext;
 });
+const endingTitle = computed(() => currentSegment.value?.endingTitle ?? "Dein Weg endet hier");
+const endingText = computed(() => currentSegment.value?.endingText ?? "Deine letzte Entscheidung hat den Kurs von Trupp 705 festgelegt.");
+const endingRecapItems = computed(() => {
+  if (!isTextEnding.value) {
+    return [];
+  }
+
+  const items = [];
+  const storyline = session.value.storyline;
+
+  if (storyline) {
+    items.push(`Akt 4 startete mit Storyline ${storyline}.`);
+  }
+
+  const chapterChoices = [
+    ["akt2", "Akt 2"],
+    ["akt3", "Akt 3"],
+    ["akt4", "Finale in Akt 4"],
+  ];
+
+  for (const [id, label] of chapterChoices) {
+    const decisions = state.sessions?.[id]?.decisions;
+    if (!Array.isArray(decisions) || decisions.length === 0) {
+      continue;
+    }
+
+    const lastDecision = decisions[decisions.length - 1];
+    if (!lastDecision?.label) {
+      continue;
+    }
+
+    items.push(`${label}: ${lastDecision.label}`);
+  }
+
+  return items;
+});
 
 function updateScreenState() {
   isSmallScreen.value = window.matchMedia("(max-width: 900px)").matches;
@@ -291,8 +342,26 @@ watch(
     showThankYouScreen.value = false;
     await nextTick();
 
+    if (!currentSegment.value) {
+      return;
+    }
+
+    if (!hasAudio.value) {
+      isPlaying.value = false;
+      duration.value = 0;
+      currentTime.value = 0;
+      updateCurrentTime(0);
+
+      if (isTextEnding.value) {
+        segmentFinished.value = true;
+        completeChapter(currentBook.value.id);
+      }
+
+      return;
+    }
+
     const audio = audioRef.value;
-    if (!audio || !currentSegment.value) {
+    if (!audio) {
       return;
     }
 
@@ -320,7 +389,7 @@ watch(isSmallScreen, (small) => {
 });
 
 function togglePlayback() {
-  if (!isChapterUnlocked.value || isSmallScreen.value || showThankYouScreen.value || !currentSegment.value) {
+  if (!isChapterUnlocked.value || isSmallScreen.value || showThankYouScreen.value || !currentSegment.value || !hasAudio.value) {
     return;
   }
 
@@ -391,11 +460,19 @@ function handleSegmentEnd() {
   isPlaying.value = false;
   segmentFinished.value = true;
 
+  // AUTOPLAY NEXT SEGMENT
+  if (currentSegment.value?.autoplayNext && currentSegment.value?.nextSegmentId) {
+    moveToSegment(currentSegment.value.nextSegmentId);
+    return;
+  }
+
+  // CHAPTER COMPLETION
   if (progress.value >= 100 && isLastSegment.value) {
     completeChapter(currentBook.value.id);
     showThankYouScreen.value = true;
   }
 }
+
 
 function resetWholeStory() {
   const audio = audioRef.value;
@@ -570,6 +647,23 @@ function goToNextChapter() {
   border: 1px solid rgba(255, 255, 255, 0.1);
   display: grid;
   gap: 0.7rem;
+}
+
+.ending-card {
+  grid-column: 1;
+  grid-row: 3;
+  border-radius: 1rem;
+  padding: 0.9rem 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ending-recap {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .audio-controller__timeline {

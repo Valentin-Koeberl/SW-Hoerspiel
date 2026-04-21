@@ -3,9 +3,28 @@ import { chapterMap, chapters, defaultChapterId } from "../data/audioBooks";
 
 const STORAGE_KEY = "sw-hoerspiel-player-state";
 
-function createSession(chapterId) {
+function normalizeStoryline(storyline) {
+  if (storyline === null || storyline === undefined || storyline === "") {
+    return null;
+  }
+
+  return String(storyline);
+}
+
+function resolveStartSegmentId(chapter, storyline = null) {
+  const normalizedStoryline = normalizeStoryline(storyline);
+  const mappedSegmentId = normalizedStoryline ? chapter?.startSegmentByStoryline?.[normalizedStoryline] : null;
+  if (mappedSegmentId && chapter?.segmentMap?.[mappedSegmentId]) {
+    return mappedSegmentId;
+  }
+
+  return chapter?.initialSegmentId ?? null;
+}
+
+function createSession(chapterId, storyline = null) {
   const chapter = chapterMap[chapterId] ?? chapterMap[defaultChapterId];
-  const initialSegmentId = chapter?.initialSegmentId ?? null;
+  const initialSegmentId = resolveStartSegmentId(chapter, storyline);
+  const normalizedStoryline = normalizeStoryline(storyline);
 
   return {
     currentSegmentId: initialSegmentId,
@@ -13,6 +32,7 @@ function createSession(chapterId) {
     decisions: [],
     visitedSegments: initialSegmentId ? [initialSegmentId] : [],
     autoplayTransitioning: false,
+    storyline: normalizedStoryline,
   };
 }
 
@@ -33,7 +53,8 @@ const defaultState = {
 
 function normalizeSession(chapterId, session) {
   const chapter = chapterMap[chapterId];
-  const fallback = createSession(chapterId);
+  const savedStoryline = normalizeStoryline(session?.storyline ?? chapter?.segmentMap?.[session?.currentSegmentId]?.nextStoryline);
+  const fallback = createSession(chapterId, savedStoryline);
 
   if (!session || typeof session !== "object") {
     return fallback;
@@ -46,6 +67,7 @@ function normalizeSession(chapterId, session) {
   return {
     ...fallback,
     ...session,
+    storyline: normalizeStoryline(session.storyline) ?? savedStoryline,
     decisions: Array.isArray(session.decisions) ? session.decisions : [],
     visitedSegments: Array.isArray(session.visitedSegments)
       ? session.visitedSegments.filter((segmentId) => segmentId in chapter.segmentMap)
@@ -126,9 +148,9 @@ watch(
   { deep: true },
 );
 
-function ensureSession(chapterId) {
+function ensureSession(chapterId, storyline = null) {
   if (!state.sessions[chapterId]) {
-    state.sessions[chapterId] = createSession(chapterId);
+    state.sessions[chapterId] = createSession(chapterId, storyline);
   }
 
   return state.sessions[chapterId];
@@ -155,27 +177,69 @@ function addExploredSegment(chapterId, segmentId) {
   progress.exploredSegments.push(segmentId);
 }
 
+function resolveStorylineFromChapterSession(chapterId) {
+  const chapter = chapterMap[chapterId];
+  const chapterSession = state.sessions?.[chapterId];
+
+  return normalizeStoryline(
+    chapterSession?.storyline ?? chapter?.segmentMap?.[chapterSession?.currentSegmentId]?.nextStoryline,
+  );
+}
+
 function setActiveBook(chapterId) {
   if (!(chapterId in chapterMap)) {
     state.activeBookId = defaultChapterId;
     return;
   }
 
+  const previousBookId = state.activeBookId;
+  const previousSession = state.sessions[previousBookId];
+  const previousChapter = chapterMap[previousBookId];
+  const previousStoryline = normalizeStoryline(
+    previousSession?.storyline ?? previousChapter?.segmentMap?.[previousSession?.currentSegmentId]?.nextStoryline,
+  );
+  const resolvedStoryline =
+    chapterId === "akt4" ? resolveStorylineFromChapterSession("akt3") ?? previousStoryline : previousStoryline;
+
   state.activeBookId = chapterId;
-  const session = ensureSession(chapterId);
+  let session = ensureSession(chapterId, chapterId === "akt4" ? resolvedStoryline : null);
+
+  if (chapterId === "akt4" && resolvedStoryline) {
+    const cameFromAct3 = previousBookId === "akt3";
+    const storylineChanged = normalizeStoryline(session.storyline) !== resolvedStoryline;
+
+    if (cameFromAct3 && storylineChanged) {
+      state.sessions[chapterId] = createSession(chapterId, resolvedStoryline);
+      session = state.sessions[chapterId];
+    }
+
+    session.storyline = resolvedStoryline;
+
+    const chapter = chapterMap[chapterId];
+    const resolvedStartSegmentId = resolveStartSegmentId(chapter, resolvedStoryline);
+    const isFreshSession = session.decisions.length === 0 && session.visitedSegments.length <= 1 && session.currentTime === 0;
+
+    if (resolvedStartSegmentId && isFreshSession && session.currentSegmentId !== resolvedStartSegmentId) {
+      session.currentSegmentId = resolvedStartSegmentId;
+      session.visitedSegments = [resolvedStartSegmentId];
+    }
+  }
+
   addExploredSegment(chapterId, session.currentSegmentId);
 }
 
 function moveToSegment(segmentId) {
   const chapter = chapterMap[state.activeBookId];
   const session = ensureSession(state.activeBookId);
+  const targetSegment = chapter.segmentMap[segmentId];
 
-  if (!(segmentId in chapter.segmentMap)) {
+  if (!targetSegment) {
     return;
   }
 
   session.currentSegmentId = segmentId;
   session.currentTime = 0;
+  session.storyline = normalizeStoryline(targetSegment.nextStoryline) ?? session.storyline ?? null;
 
   if (!session.visitedSegments.includes(segmentId)) {
     session.visitedSegments.push(segmentId);
@@ -203,7 +267,8 @@ function updateCurrentTime(timeInSeconds) {
 }
 
 function resetProgress() {
-  state.sessions[state.activeBookId] = createSession(state.activeBookId);
+  const currentStoryline = state.sessions[state.activeBookId]?.storyline ?? null;
+  state.sessions[state.activeBookId] = createSession(state.activeBookId, currentStoryline);
   const initialSegmentId = state.sessions[state.activeBookId].currentSegmentId;
   if (initialSegmentId) {
     addExploredSegment(state.activeBookId, initialSegmentId);
@@ -231,8 +296,10 @@ function completeChapter(chapterId = state.activeBookId) {
   recalculateUnlocks();
 }
 
-export function usePlayerStore(chapterId = defaultChapterId) {
-  setActiveBook(chapterId);
+export function usePlayerStore(chapterId = null) {
+  if (chapterId) {
+    setActiveBook(chapterId);
+  }
 
   const currentBook = computed(() => chapterMap[state.activeBookId] ?? chapterMap[defaultChapterId]);
   const session = computed(() => ensureSession(state.activeBookId));
